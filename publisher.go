@@ -15,34 +15,36 @@ const (
 	headerPubAt = "pub-at"
 )
 
-func PublishJson[T any](ctx *dgctx.DgContext, subject *Subject, obj T) error {
+func PublishJson[T any](ctx *dgctx.DgContext, subject *Subject, obj *T) error {
 	jsonBytes, err := json.Marshal(obj)
 	if err != nil {
 		return err
 	}
+	dglogger.Infof(ctx, "publish subject[%s] json message: %s", subject.Name, string(jsonBytes))
 
 	return PublishRaw(ctx, subject, jsonBytes)
 }
 
-func PublishJsonDelay[T any](ctx *dgctx.DgContext, subject *Subject, obj T, duration time.Duration) error {
+func PublishJsonDelay[T any](ctx *dgctx.DgContext, subject *Subject, obj *T, duration time.Duration) error {
 	jsonBytes, err := json.Marshal(obj)
 	if err != nil {
 		return err
 	}
+	dglogger.Infof(ctx, "publish subject[%s] json delay message: %s", subject.Name, string(jsonBytes))
 
 	header := buildDelayHeader(ctx, duration)
-	return publishMsg(ctx, subject, jsonBytes, header)
+	return publishMsg(subject, jsonBytes, header)
 }
 
 func PublishRaw(ctx *dgctx.DgContext, subject *Subject, data []byte) error {
 	header := map[string][]string{constants.TraceId: {ctx.TraceId}}
 
-	return publishMsg(ctx, subject, data, header)
+	return publishMsg(subject, data, header)
 }
 
 func PublishRawDelay(ctx *dgctx.DgContext, subject *Subject, data []byte, duration time.Duration) error {
 	header := buildDelayHeader(ctx, duration)
-	return publishMsg(ctx, subject, data, header)
+	return publishMsg(subject, data, header)
 }
 
 func buildDelayHeader(ctx *dgctx.DgContext, duration time.Duration) map[string][]string {
@@ -53,13 +55,11 @@ func buildDelayHeader(ctx *dgctx.DgContext, duration time.Duration) map[string][
 	}
 }
 
-func publishMsg(ctx *dgctx.DgContext, subject *Subject, data []byte, header nats.Header) error {
-	dglogger.Infof(ctx, "send nats message, subject: %s, header: %+v",
-		subject.Name, header)
+func publishMsg(subject *Subject, data []byte, header nats.Header) error {
 	msg := &nats.Msg{
 		Subject: subject.Name,
 		Header:  header,
 		Data:    data,
 	}
-	return natsClient.PublishMsg(msg)
+	return natsConn.PublishMsg(msg)
 }

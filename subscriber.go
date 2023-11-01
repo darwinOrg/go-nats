@@ -11,7 +11,7 @@ import (
 )
 
 func SubscribeJson[T any](subject *Subject, workFn func(*dgctx.DgContext, *T)) {
-	_, err := natsClient.Subscribe(subject.Name, func(msg *nats.Msg) {
+	_, err := natsConn.Subscribe(subject.Name, func(msg *nats.Msg) {
 		subscribeJson(subject.Name, msg, workFn)
 	})
 
@@ -21,7 +21,7 @@ func SubscribeJson[T any](subject *Subject, workFn func(*dgctx.DgContext, *T)) {
 }
 
 func QueueSubscribeJson[T any](subject *Subject, workFn func(*dgctx.DgContext, *T)) {
-	_, err := natsClient.QueueSubscribe(subject.Name, subject.Queue, func(msg *nats.Msg) {
+	_, err := natsConn.QueueSubscribe(subject.Name, subject.Queue, func(msg *nats.Msg) {
 		subscribeJson(subject.Name+"-"+subject.Queue, msg, workFn)
 	})
 
@@ -44,7 +44,7 @@ func subscribeJson[T any](name string, msg *nats.Msg, workFn func(*dgctx.DgConte
 }
 
 func SubscribeRaw(subject *Subject, workFn func(*dgctx.DgContext, []byte)) {
-	_, err := natsClient.Subscribe(subject.Name, func(msg *nats.Msg) {
+	_, err := natsConn.Subscribe(subject.Name, func(msg *nats.Msg) {
 		ctx := buildDgContextFromMsg(msg)
 		workFn(ctx, msg.Data)
 	})
@@ -55,7 +55,7 @@ func SubscribeRaw(subject *Subject, workFn func(*dgctx.DgContext, []byte)) {
 }
 
 func QueueSubscribeRaw(subject *Subject, workFn func(*dgctx.DgContext, []byte)) {
-	_, err := natsClient.QueueSubscribe(subject.Name, subject.Queue, func(msg *nats.Msg) {
+	_, err := natsConn.QueueSubscribe(subject.Name, subject.Queue, func(msg *nats.Msg) {
 		ctx := buildDgContextFromMsg(msg)
 		workFn(ctx, msg.Data)
 	})

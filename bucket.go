@@ -7,7 +7,7 @@ type natsBucket struct {
 }
 
 func NewNatsBucket(bucket string) (*natsBucket, error) {
-	stream, err := natsClient.JetStream()
+	stream, err := natsConn.JetStream()
 	if err != nil {
 		return nil, err
 	}

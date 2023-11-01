@@ -11,15 +11,11 @@ type NatsConfig struct {
 	ConnectionName string   `json:"connection-name" mapstructure:"connection-name"`
 	Username       string   `json:"username" mapstructure:"username"`
 	Password       string   `json:"password" mapstructure:"password"`
-	CheckPoint     struct {
-		Enable bool   `json:"enable" mapstructure:"enable"`
-		AppId  string `json:"appId" mapstructure:"appId"`
-	} `json:"checkpoint" mapstructure:"checkpoint"`
 }
 
-var natsClient *nats.Conn
+var natsConn *nats.Conn
 
-func InitClient(natsConf *NatsConfig) *nats.Conn {
+func Connect(natsConf *NatsConfig) {
 	opts := nats.GetDefaultOptions()
 	opts.MaxReconnect = natsConf.PoolSize
 	opts.ReconnectWait = 10 * time.Second
@@ -32,6 +28,11 @@ func InitClient(natsConf *NatsConfig) *nats.Conn {
 	if err != nil {
 		panic(err)
 	}
+	natsConn = nc
+}
 
-	return nc
+func Close() {
+	if !natsConn.IsClosed() {
+		natsConn.Close()
+	}
 }
