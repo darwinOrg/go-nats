@@ -1,0 +1,65 @@
+package dgnats
+
+import (
+	"encoding/json"
+	"github.com/darwinOrg/go-common/constants"
+	dgctx "github.com/darwinOrg/go-common/context"
+	dglogger "github.com/darwinOrg/go-logger"
+	"github.com/nats-io/nats.go"
+	"strconv"
+	"time"
+)
+
+const (
+	headerDelay = "delay"
+	headerPubAt = "pub-at"
+)
+
+func PublishJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, obj T) error {
+	jsonBytes, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+
+	return PublishRaw(ctx, subject, jsonBytes)
+}
+
+func PublishJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, obj T, duration time.Duration) error {
+	jsonBytes, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+
+	header := buildDelayHeader(ctx, duration)
+	return publishMsg(ctx, subject, jsonBytes, header)
+}
+
+func PublishRaw(ctx *dgctx.DgContext, subject *NatsSubject, data []byte) error {
+	header := map[string][]string{constants.TraceId: {ctx.TraceId}}
+
+	return publishMsg(ctx, subject, data, header)
+}
+
+func PublishRawDelay(ctx *dgctx.DgContext, subject *NatsSubject, data []byte, duration time.Duration) error {
+	header := buildDelayHeader(ctx, duration)
+	return publishMsg(ctx, subject, data, header)
+}
+
+func buildDelayHeader(ctx *dgctx.DgContext, duration time.Duration) map[string][]string {
+	return map[string][]string{
+		constants.TraceId: {ctx.TraceId},
+		headerPubAt:       {strconv.FormatInt(time.Now().UnixMilli(), 10)},
+		headerDelay:       {strconv.FormatInt(duration.Milliseconds(), 10)},
+	}
+}
+
+func publishMsg(ctx *dgctx.DgContext, subject *NatsSubject, data []byte, header nats.Header) error {
+	dglogger.Infof(ctx, "send nats message, subject: %s, header: %+v",
+		subject.Name, header)
+	msg := &nats.Msg{
+		Subject: subject.Name,
+		Header:  header,
+		Data:    data,
+	}
+	return natsClient.PublishMsg(msg)
+}
