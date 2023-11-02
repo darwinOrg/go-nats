@@ -14,8 +14,9 @@ type NatsConfig struct {
 }
 
 var natsConn *nats.Conn
+var natsJs nats.JetStreamContext
 
-func Connect(natsConf *NatsConfig) {
+func Connect(natsConf *NatsConfig) error {
 	opts := nats.GetDefaultOptions()
 	opts.MaxReconnect = natsConf.PoolSize
 	opts.ReconnectWait = 10 * time.Second
@@ -26,9 +27,19 @@ func Connect(natsConf *NatsConfig) {
 
 	nc, err := opts.Connect()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	natsConn = nc
+	js, err := nc.JetStream()
+	if err != nil {
+		return err
+	}
+	natsJs = js
+	//natsJs.AddStream(&nats.StreamConfig{
+	//	Name:     "startrek-mq",
+	//})
+
+	return nil
 }
 
 func Close() {

@@ -7,12 +7,7 @@ type natsBucket struct {
 }
 
 func NewNatsBucket(bucket string) (*natsBucket, error) {
-	stream, err := natsConn.JetStream()
-	if err != nil {
-		return nil, err
-	}
-
-	keyValue, err := stream.CreateKeyValue(&nats.KeyValueConfig{Bucket: bucket})
+	keyValue, err := natsJs.CreateKeyValue(&nats.KeyValueConfig{Bucket: bucket})
 	if err != nil {
 		return nil, err
 	}

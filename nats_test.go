@@ -14,42 +14,54 @@ type TestStruct struct {
 	Content string `json:"content"`
 }
 
-var testSubject = &dgnats.Subject{
+var testSubject = &dgnats.NatsSubject{
 	Name:  "test",
 	Queue: "queue",
 }
 
+var testDelaySubject = &dgnats.NatsSubject{
+	Name:  "test-delay",
+	Queue: "queue-delay",
+}
+
 func TestNats(t *testing.T) {
-	dgnats.Connect(&dgnats.NatsConfig{
+	err := dgnats.Connect(&dgnats.NatsConfig{
 		PoolSize:       10,
 		Servers:        []string{"nats://localhost:4222"},
 		ConnectionName: "startrek-mq",
 		Username:       "startrek_mq",
 		Password:       "cswjggljrmpypwfccarzpjxG-urepqldkhecvnzxzmngotaqs-bkwdvjgipruectqcowoqb6nj",
 	})
+	if err != nil {
+		return
+	}
+	defer dgnats.Close()
 
 	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
 
-	dgnats.SubscribeJson[TestStruct](testSubject, func(ctx *dgctx.DgContext, s *TestStruct) {
+	dgnats.SubscribeJson(testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)
 		dglogger.Infof(ctx, "handle message: %s", string(jsonBytes))
+		return nil
 	})
 
-	err := dgnats.PublishJson[TestStruct](ctx, testSubject, &TestStruct{Content: "123"})
+	err = dgnats.PublishJson(ctx, testSubject, &TestStruct{Content: "123"})
 	if err != nil {
-		dglogger.Errorf(ctx, "publish error: %v", err)
+		dglogger.Errorf(ctx, "publish message error: %v", err)
 		return
 	}
 
-	time.Sleep(time.Second * 3)
+	dgnats.SubscribeJsonDelay(testDelaySubject, time.Second*1, func(ctx *dgctx.DgContext, s *TestStruct) error {
+		jsonBytes, _ := json.Marshal(s)
+		dglogger.Infof(ctx, "handle delay message: %s", string(jsonBytes))
+		return nil
+	})
 
-	err = dgnats.PublishJsonDelay[TestStruct](ctx, testSubject, &TestStruct{Content: "456"}, time.Second*3)
+	err = dgnats.PublishJsonDelay(ctx, testDelaySubject, &TestStruct{Content: "456"}, time.Second*3)
 	if err != nil {
-		dglogger.Errorf(ctx, "publish error: %v", err)
+		dglogger.Errorf(ctx, "publish delay message error: %v", err)
 		return
 	}
 
-	time.Sleep(time.Second * 8)
-
-	dgnats.Close()
+	time.Sleep(time.Second * 5)
 }
