@@ -10,11 +10,6 @@ import (
 	"time"
 )
 
-const (
-	headerDelay = "delay"
-	headerPubAt = "pub-at"
-)
-
 func PublishJson[T any](ctx *dgctx.DgContext, subject *Subject, obj *T) error {
 	jsonBytes, err := json.Marshal(obj)
 	if err != nil {

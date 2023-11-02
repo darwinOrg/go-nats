@@ -35,15 +35,21 @@ func TestNats(t *testing.T) {
 		dglogger.Infof(ctx, "handle message: %s", string(jsonBytes))
 	})
 
-	time.Sleep(time.Second * 3)
-
-	err := dgnats.PublishJson[TestStruct](ctx, testSubject, &TestStruct{Content: "123456"})
+	err := dgnats.PublishJson[TestStruct](ctx, testSubject, &TestStruct{Content: "123"})
 	if err != nil {
 		dglogger.Errorf(ctx, "publish error: %v", err)
 		return
 	}
 
 	time.Sleep(time.Second * 3)
+
+	err = dgnats.PublishJsonDelay[TestStruct](ctx, testSubject, &TestStruct{Content: "456"}, time.Second*3)
+	if err != nil {
+		dglogger.Errorf(ctx, "publish error: %v", err)
+		return
+	}
+
+	time.Sleep(time.Second * 8)
 
 	dgnats.Close()
 }
