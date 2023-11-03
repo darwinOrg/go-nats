@@ -17,6 +17,9 @@ func initStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	}
 
 	streamInfo, _ := natsJs.StreamInfo(subject.Category)
+	defer func() {
+		streamCache[subjectId] = streamInfo
+	}()
 
 	if streamInfo != nil {
 		if dgcoll.AnyMatch(streamInfo.Config.Subjects, func(s string) bool {
@@ -34,11 +37,12 @@ func initStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	} else {
 		dglogger.Debugf(ctx, "add stream %s", subject.Category)
 
-		streamInfo, err := natsJs.AddStream(buildStreamConfig(subject))
+		si, err := natsJs.AddStream(buildStreamConfig(subject))
 		if err != nil {
+			dglogger.Errorf(ctx, "add stream[%s] error: %v", subject.Category, err)
 			return err
 		}
-		streamCache[subjectId] = streamInfo
+		streamInfo = si
 	}
 
 	return nil
