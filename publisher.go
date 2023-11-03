@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-var streamCache = map[string]*nats.StreamInfo{}
-
 func PublishJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, obj *T) error {
 	jsonBytes, err := json.Marshal(obj)
 	if err != nil {

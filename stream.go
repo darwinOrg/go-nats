@@ -7,6 +7,8 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+var streamCache = map[string]*nats.StreamInfo{}
+
 func initStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	subjectId := subject.GetId()
 	if streamCache[subjectId] != nil {

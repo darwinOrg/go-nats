@@ -19,8 +19,6 @@ var DefaultSubOpts = []nats.SubOpt{
 	nats.DeliverLast(),
 }
 
-var subjectCache = map[string]*NatsSubject{}
-
 func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
 	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
 	err := initStream(ctx, subject)
