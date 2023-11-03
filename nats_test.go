@@ -27,6 +27,8 @@ var testDelaySubject = &dgnats.NatsSubject{
 }
 
 func TestNats(t *testing.T) {
+	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+
 	err := dgnats.Connect(&dgnats.NatsConfig{
 		PoolSize:       10,
 		Servers:        []string{"nats://localhost:4222"},
@@ -35,11 +37,10 @@ func TestNats(t *testing.T) {
 		Password:       "cswjggljrmpypwfccarzpjxG-urepqldkhecvnzxzmngotaqs-bkwdvjgipruectqcowoqb6nj",
 	})
 	if err != nil {
+		dglogger.Panicf(ctx, "connect nats error: %v", err)
 		return
 	}
 	defer dgnats.Close()
-
-	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
 
 	dgnats.SubscribeJson(testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)

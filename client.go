@@ -22,7 +22,6 @@ func Connect(natsConf *NatsConfig) error {
 	opts.Name = natsConf.ConnectionName
 	opts.User = natsConf.Username
 	opts.Password = natsConf.Password
-	opts.NoEcho = true
 
 	nc, err := opts.Connect()
 	if err != nil {
