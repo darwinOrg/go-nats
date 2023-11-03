@@ -12,8 +12,8 @@ const (
 var illegalRegex = regexp.MustCompile(illegalRegexStr)
 
 type NatsSubject struct {
-	Category string `json:"category" binding:"required" remark:"流"`
-	Name     string `json:"name" binding:"required" remark:"topic"`
+	Category string `json:"category" binding:"required" remark:"流/topic"`
+	Name     string `json:"name" binding:"required" remark:"tag"`
 	Group    string `json:"group" remark:"队列"`
 }
 
