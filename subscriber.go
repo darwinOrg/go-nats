@@ -12,10 +12,18 @@ import (
 	"time"
 )
 
+const SubscribeWorkErrorWaitDuration = time.Second * 5
+
+var DefaultSubOpts = []nats.SubOpt{
+	nats.AckExplicit(),
+	nats.ManualAck(),
+	nats.StartTime(time.Now()),
+}
+
 func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
 	_, err := natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
 		subscribeJson(subject.Name, msg, workFn)
-	})
+	}, DefaultSubOpts...)
 
 	if err != nil {
 		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
@@ -25,7 +33,7 @@ func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T
 func QueueSubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
 	_, err := natsJs.QueueSubscribe(subject.Name, subject.Queue, func(msg *nats.Msg) {
 		subscribeJson(subject.Name+"-"+subject.Queue, msg, workFn)
-	})
+	}, DefaultSubOpts...)
 
 	if err != nil {
 		logrus.Panicf("queue subscribe subject[%s, %s] error: %v", subject.Name, subject.Queue, err)
@@ -39,20 +47,17 @@ func subscribeJson[T any](name string, msg *nats.Msg, workFn func(*dgctx.DgConte
 	err := json.Unmarshal(msg.Data, t)
 	if err != nil {
 		dglogger.Errorf(ctx, "unmarshal json[%s] error: %v", msg.Data, err)
+		msg.AckSync()
 		return
 	}
 
-	err = workFn(ctx, t)
-	if err != nil {
-		return
-	}
-	msg.AckSync()
+	workAndAck(ctx, msg, t, workFn)
 }
 
 func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
 	_, err := natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
 		subscribeRaw(msg, workFn)
-	})
+	}, DefaultSubOpts...)
 
 	if err != nil {
 		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
@@ -62,7 +67,7 @@ func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) er
 func QueueSubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
 	_, err := natsJs.QueueSubscribe(subject.Name, subject.Queue, func(msg *nats.Msg) {
 		subscribeRaw(msg, workFn)
-	})
+	}, DefaultSubOpts...)
 
 	if err != nil {
 		logrus.Panicf("queue subscribe subject[%s, %s] error: %v", subject.Name, subject.Queue, err)
@@ -72,10 +77,7 @@ func QueueSubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byt
 func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
 	ctx := buildDgContextFromMsg(msg)
 	err := workFn(ctx, msg.Data)
-	if err != nil {
-		return
-	}
-	msg.AckSync()
+	ackOrNakByError(msg, err)
 }
 
 func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
@@ -93,7 +95,7 @@ func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
 func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
 	_, err := natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
 		subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
-	})
+	}, DefaultSubOpts...)
 
 	if err != nil {
 		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
@@ -103,7 +105,7 @@ func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration
 func QueueSubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
 	_, err := natsJs.QueueSubscribe(subject.Name, subject.Queue, func(msg *nats.Msg) {
 		subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
-	})
+	}, nats.AckExplicit())
 
 	if err != nil {
 		logrus.Panicf("queue subscribe subject[%s] error: %v", subject.Name, err)
@@ -113,6 +115,7 @@ func QueueSubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Dur
 func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
 	delayHeader := msg.Header[headerDelay]
 	if len(delayHeader) == 0 {
+		msg.AckSync()
 		return
 	}
 
@@ -134,15 +137,22 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 	err := json.Unmarshal([]byte(data), t)
 	if err != nil {
 		dglogger.Errorf(ctx, "unmarshal json[%s] error: %v", data, err)
+		msg.AckSync()
 		return
 	}
 
-	err = workFn(ctx, t)
+	workAndAck(ctx, msg, t, workFn)
+}
+
+func workAndAck[T any](ctx *dgctx.DgContext, msg *nats.Msg, t *T, workFn func(*dgctx.DgContext, *T) error) {
+	err := workFn(ctx, t)
+	ackOrNakByError(msg, err)
+}
+
+func ackOrNakByError(msg *nats.Msg, err error) {
 	if err != nil {
-		return
-	}
-	err = msg.AckSync()
-	if err != nil {
-		return
+		msg.NakWithDelay(SubscribeWorkErrorWaitDuration)
+	} else {
+		msg.AckSync()
 	}
 }

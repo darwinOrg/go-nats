@@ -38,7 +38,7 @@ func Connect(natsConf *NatsConfig) error {
 	//natsJs.AddStream(&nats.StreamConfig{
 	//	Name:     "startrek-mq",
 	//})
-
+	nats.AckExplicit()
 	return nil
 }
 
