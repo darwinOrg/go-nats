@@ -7,7 +7,6 @@ import (
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 )
@@ -23,7 +22,12 @@ var DefaultSubOpts = []nats.SubOpt{
 var subjectCache = map[string]*NatsSubject{}
 
 func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
-	var err error
+	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+	err := initStream(ctx, subject)
+	if err != nil {
+		return
+	}
+
 	if subject.Group != "" {
 		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeJson(msg, workFn)
@@ -35,7 +39,7 @@ func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T
 	}
 
 	if err != nil {
-		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
 	}
 }
 
@@ -54,7 +58,12 @@ func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error
 }
 
 func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
-	var err error
+	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+	err := initStream(ctx, subject)
+	if err != nil {
+		return
+	}
+
 	if subject.Group != "" {
 		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeRaw(msg, workFn)
@@ -66,7 +75,7 @@ func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) er
 	}
 
 	if err != nil {
-		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
 	}
 }
 
@@ -77,7 +86,12 @@ func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
 }
 
 func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
-	var err error
+	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+	err := initStream(ctx, subject)
+	if err != nil {
+		return
+	}
+
 	if subject.Group != "" {
 		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
@@ -89,7 +103,7 @@ func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration
 	}
 
 	if err != nil {
-		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
 	}
 }
 

@@ -41,18 +41,6 @@ func TestNats(t *testing.T) {
 
 	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
 
-	err = dgnats.PublishJson(ctx, testSubject, &TestStruct{Content: "123"})
-	if err != nil {
-		dglogger.Errorf(ctx, "publish message error: %v", err)
-		return
-	}
-
-	err = dgnats.PublishJsonDelay(ctx, testDelaySubject, &TestStruct{Content: "456"}, time.Second*3)
-	if err != nil {
-		dglogger.Errorf(ctx, "publish delay message error: %v", err)
-		return
-	}
-
 	dgnats.SubscribeJson(testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)
 		dglogger.Infof(ctx, "handle message: %s", string(jsonBytes))
@@ -64,6 +52,18 @@ func TestNats(t *testing.T) {
 		dglogger.Infof(ctx, "handle delay message: %s", string(jsonBytes))
 		return nil
 	})
+
+	err = dgnats.PublishJson(ctx, testSubject, &TestStruct{Content: "123"})
+	if err != nil {
+		dglogger.Errorf(ctx, "publish message error: %v", err)
+		return
+	}
+
+	err = dgnats.PublishJsonDelay(ctx, testDelaySubject, &TestStruct{Content: "456"}, time.Second*3)
+	if err != nil {
+		dglogger.Errorf(ctx, "publish delay message error: %v", err)
+		return
+	}
 
 	time.Sleep(time.Second * 5)
 }
