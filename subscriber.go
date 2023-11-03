@@ -138,7 +138,7 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 }
 
 func Unsubscribe(subject *NatsSubject) error {
-	return natsJs.DeleteConsumer(subject.Category, subject.GetId())
+	return natsJs.DeleteConsumer(subject.Category, subject.GetDurable())
 }
 
 func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
