@@ -2,6 +2,7 @@ package dgnats
 
 import (
 	"github.com/nats-io/nats.go"
+	"time"
 )
 
 type NatsConfig struct {
@@ -36,6 +37,10 @@ func Connect(natsConf *NatsConfig) error {
 	natsJs = js
 
 	return nil
+}
+
+func Flush(timeout time.Duration) error {
+	return natsConn.FlushTimeout(timeout)
 }
 
 func Close() {

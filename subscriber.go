@@ -23,28 +23,25 @@ var DefaultSubOpts = []nats.SubOpt{
 var subjectCache = map[string]*NatsSubject{}
 
 func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
-	_, err := natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
-		subscribeJson(subject.Name, msg, workFn)
-	}, buildSubOpts(subject)...)
+	var err error
+	if subject.Group != "" {
+		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+			subscribeJson(msg, workFn)
+		}, buildSubOpts(subject)...)
+	} else {
+		_, err = natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
+			subscribeJson(msg, workFn)
+		}, buildSubOpts(subject)...)
+	}
 
 	if err != nil {
 		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
 	}
 }
 
-func QueueSubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
-	_, err := natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
-		subscribeJson(subject.Name+"-"+subject.Group, msg, workFn)
-	}, buildSubOpts(subject)...)
-
-	if err != nil {
-		logrus.Panicf("queue subscribe subject[%s, %s] error: %v", subject.Name, subject.Group, err)
-	}
-}
-
-func subscribeJson[T any](name string, msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error) {
+func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error) {
 	ctx := buildDgContextFromMsg(msg)
-	dglogger.Infof(ctx, "[%s] receive json message: %s", name, string(msg.Data))
+	dglogger.Infof(ctx, "[%s] receive json message: %s", msg.Subject, string(msg.Data))
 	t := new(T)
 	err := json.Unmarshal(msg.Data, t)
 	if err != nil {
@@ -57,22 +54,19 @@ func subscribeJson[T any](name string, msg *nats.Msg, workFn func(*dgctx.DgConte
 }
 
 func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
-	_, err := natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
-		subscribeRaw(msg, workFn)
-	}, buildSubOpts(subject)...)
+	var err error
+	if subject.Group != "" {
+		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+			subscribeRaw(msg, workFn)
+		}, buildSubOpts(subject)...)
+	} else {
+		_, err = natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
+			subscribeRaw(msg, workFn)
+		}, buildSubOpts(subject)...)
+	}
 
 	if err != nil {
 		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
-	}
-}
-
-func QueueSubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
-	_, err := natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
-		subscribeRaw(msg, workFn)
-	}, buildSubOpts(subject)...)
-
-	if err != nil {
-		logrus.Panicf("queue subscribe subject[%s, %s] error: %v", subject.Name, subject.Group, err)
 	}
 }
 
@@ -82,35 +76,20 @@ func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
 	ackOrNakByError(msg, err)
 }
 
-func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
-	traceIdHeader := msg.Header[constants.TraceId]
-	var traceId string
-	if len(traceIdHeader) > 0 {
-		traceId = msg.Header[constants.TraceId][0]
-	}
-	if traceId == "" {
-		traceId = uuid.NewString()
-	}
-	return &dgctx.DgContext{TraceId: traceId}
-}
-
 func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
-	_, err := natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
-		subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
-	}, buildSubOpts(subject)...)
+	var err error
+	if subject.Group != "" {
+		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+			subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
+		}, buildSubOpts(subject)...)
+	} else {
+		_, err = natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
+			subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
+		}, buildSubOpts(subject)...)
+	}
 
 	if err != nil {
 		logrus.Panicf("subscribe subject[%s] error: %v", subject.Name, err)
-	}
-}
-
-func QueueSubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
-	_, err := natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
-		subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
-	}, buildSubOpts(subject)...)
-
-	if err != nil {
-		logrus.Panicf("queue subscribe subject[%s] error: %v", subject.Name, err)
 	}
 }
 
@@ -146,6 +125,22 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 	workAndAck(ctx, msg, t, workFn)
 }
 
+func Unsubscribe(subject *NatsSubject) error {
+	return natsJs.DeleteConsumer(subject.Category, subject.GetId())
+}
+
+func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
+	traceIdHeader := msg.Header[constants.TraceId]
+	var traceId string
+	if len(traceIdHeader) > 0 {
+		traceId = msg.Header[constants.TraceId][0]
+	}
+	if traceId == "" {
+		traceId = uuid.NewString()
+	}
+	return &dgctx.DgContext{TraceId: traceId}
+}
+
 func buildSubOpts(subject *NatsSubject) []nats.SubOpt {
 	var subOpts []nats.SubOpt
 	for _, opt := range DefaultSubOpts {
@@ -153,8 +148,7 @@ func buildSubOpts(subject *NatsSubject) []nats.SubOpt {
 	}
 
 	subOpts = append(subOpts, nats.Durable(subject.GetDurable()))
-	// TODO
-	//subOpts = append(subOpts, nats.BindStream(subject.Category))
+	subOpts = append(subOpts, nats.BindStream(subject.Category))
 	return subOpts
 }
 
