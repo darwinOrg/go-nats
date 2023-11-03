@@ -3,6 +3,7 @@ package dgnats
 import (
 	dgcoll "github.com/darwinOrg/go-common/collection"
 	dgctx "github.com/darwinOrg/go-common/context"
+	dgerr "github.com/darwinOrg/go-common/enums/error"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
 )
@@ -10,6 +11,10 @@ import (
 var streamCache = map[string]*nats.StreamInfo{}
 
 func initStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
+	if natsJs == nil {
+		return dgerr.SYSTEM_ERROR
+	}
+
 	subjectId := subject.GetId()
 	if streamCache[subjectId] != nil {
 		dglogger.Debugf(ctx, "hit stream cache: %s", subject.Category)
