@@ -1,6 +1,35 @@
 package dgnats
 
+import (
+	"regexp"
+)
+
+const (
+	illegalRegexStr = "[.|*>]"
+	dash            = "-"
+)
+
+var illegalRegex = regexp.MustCompile(illegalRegexStr)
+
 type NatsSubject struct {
-	Name  string `json:"name" binding:"required"`
-	Queue string `json:"queue"`
+	Category string `json:"category" binding:"required" remark:"流"`
+	Name     string `json:"name" binding:"required" remark:"topic"`
+	Group    string `json:"group" remark:"队列"`
+}
+
+func (s *NatsSubject) GetId() string {
+	id := s.Category + "-" + s.Name
+	if s.Group != "" {
+		id = id + "-" + s.Group
+	}
+
+	return illegalRegex.ReplaceAllString(id, dash)
+}
+
+func (s *NatsSubject) GetDurable() string {
+	if s.Group != "" {
+		return s.GetId()
+	}
+
+	return ""
 }
