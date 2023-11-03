@@ -44,7 +44,7 @@ func Flush(timeout time.Duration) error {
 }
 
 func Close() {
-	if !natsConn.IsClosed() {
+	if natsConn != nil && !natsConn.IsClosed() {
 		natsConn.Close()
 	}
 }
