@@ -60,12 +60,12 @@ func publishMsg(ctx *dgctx.DgContext, subject *NatsSubject, msg *nats.Msg) error
 	if err != nil {
 		return err
 	}
-	_, err = natsJs.PublishMsg(msg, buildPutOpts(subject)...)
+	_, err = natsJs.PublishMsg(msg, buildPubOpts(subject)...)
 
 	return err
 }
 
-func buildPutOpts(subject *NatsSubject) []nats.PubOpt {
+func buildPubOpts(subject *NatsSubject) []nats.PubOpt {
 	return []nats.PubOpt{
 		nats.MsgId(nats.NewInbox()),
 		nats.ExpectStream(subject.Category),
