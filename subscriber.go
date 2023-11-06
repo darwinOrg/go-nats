@@ -28,7 +28,7 @@ func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T
 
 	js, err := getJs()
 	if err != nil {
-		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Panicf(ctx, "get jet stream error: %v", err)
 		return
 	}
 
@@ -70,7 +70,7 @@ func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) er
 
 	js, err := getJs()
 	if err != nil {
-		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Panicf(ctx, "get jet stream error: %v", err)
 		return
 	}
 
@@ -104,7 +104,7 @@ func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration
 
 	js, err := getJs()
 	if err != nil {
-		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Panicf(ctx, "get jet stream error: %v", err)
 		return
 	}
 
