@@ -26,12 +26,18 @@ func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T
 		return
 	}
 
+	js, err := getJs()
+	if err != nil {
+		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		return
+	}
+
 	if subject.Group != "" {
-		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+		_, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeJson(msg, workFn)
 		}, buildSubOpts(subject)...)
 	} else {
-		_, err = natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
+		_, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeJson(msg, workFn)
 		}, buildSubOpts(subject)...)
 	}
@@ -62,12 +68,18 @@ func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) er
 		return
 	}
 
+	js, err := getJs()
+	if err != nil {
+		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		return
+	}
+
 	if subject.Group != "" {
-		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+		_, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeRaw(msg, workFn)
 		}, buildSubOpts(subject)...)
 	} else {
-		_, err = natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
+		_, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeRaw(msg, workFn)
 		}, buildSubOpts(subject)...)
 	}
@@ -90,12 +102,18 @@ func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration
 		return
 	}
 
+	js, err := getJs()
+	if err != nil {
+		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		return
+	}
+
 	if subject.Group != "" {
-		_, err = natsJs.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+		_, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
 		}, buildSubOpts(subject)...)
 	} else {
-		_, err = natsJs.Subscribe(subject.Name, func(msg *nats.Msg) {
+		_, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
 		}, buildSubOpts(subject)...)
 	}
@@ -138,7 +156,11 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 }
 
 func Unsubscribe(subject *NatsSubject) error {
-	return natsJs.DeleteConsumer(subject.Category, subject.GetDurable())
+	js, err := getJs()
+	if err != nil {
+		return err
+	}
+	return js.DeleteConsumer(subject.Category, subject.GetDurable())
 }
 
 func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {

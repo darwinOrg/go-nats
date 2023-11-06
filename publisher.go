@@ -60,7 +60,12 @@ func publishMsg(ctx *dgctx.DgContext, subject *NatsSubject, msg *nats.Msg) error
 	if err != nil {
 		return err
 	}
-	_, err = natsJs.PublishMsg(msg, buildPutOpts(subject)...)
+
+	js, err := getJs()
+	if err != nil {
+		return err
+	}
+	_, err = js.PublishMsg(msg, buildPutOpts(subject)...)
 
 	return err
 }
