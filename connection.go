@@ -2,6 +2,9 @@ package dgnats
 
 import (
 	"errors"
+	dgctx "github.com/darwinOrg/go-common/context"
+	dglogger "github.com/darwinOrg/go-logger"
+	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"math/rand"
 	"time"
@@ -47,6 +50,33 @@ func connect(natsConf *NatsConfig) (*nats.Conn, error) {
 	opts.Name = natsConf.ConnectionName
 	opts.User = natsConf.Username
 	opts.Password = natsConf.Password
+
+	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+	opts.ConnectedCB = func(conn *nats.Conn) {
+		dglogger.Info(ctx, "nats: connection opened")
+	}
+	opts.ClosedCB = func(conn *nats.Conn) {
+		dglogger.Info(ctx, "nats: connection closed")
+	}
+	opts.ReconnectedCB = func(conn *nats.Conn) {
+		dglogger.Info(ctx, "nats: connection reconnected")
+	}
+	opts.LameDuckModeHandler = func(conn *nats.Conn) {
+		dglogger.Warn(ctx, "nats: lame duck mode")
+	}
+	opts.DiscoveredServersCB = func(conn *nats.Conn) {
+		dglogger.Warn(ctx, "nats: discovered servers")
+	}
+	opts.DisconnectedErrCB = func(conn *nats.Conn, err error) {
+		if err != nil {
+			dglogger.Infof(ctx, "nats disconnected error: %v", err)
+		}
+	}
+	opts.AsyncErrorCB = func(conn *nats.Conn, subscription *nats.Subscription, err error) {
+		if err != nil {
+			dglogger.Infof(ctx, "nats async subscription[%s] error: %v", subscription.Subject, err)
+		}
+	}
 
 	nc, err := opts.Connect()
 	if err != nil {
