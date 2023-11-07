@@ -184,7 +184,7 @@ func buildSubOpts(subject *NatsSubject) []nats.SubOpt {
 
 	subOpts = append(subOpts, nats.Durable(subject.GetDurable()))
 	subOpts = append(subOpts, nats.BindStream(subject.Category))
-	subOpts = append(subOpts, nats.MaxDeliver(MaxDeliveryCount))
+	//subOpts = append(subOpts, nats.MaxDeliver(MaxDeliveryCount))
 	return subOpts
 }
 
