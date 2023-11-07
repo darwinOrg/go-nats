@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/darwinOrg/go-common v0.0.25
-	github.com/darwinOrg/go-logger v0.0.1
+	github.com/darwinOrg/go-logger v0.0.2
 	github.com/google/uuid v1.4.0
 	github.com/nats-io/nats.go v1.31.0
 )
