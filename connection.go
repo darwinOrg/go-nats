@@ -11,10 +11,11 @@ import (
 )
 
 var (
-	natsConns           []*nats.Conn
-	natsJsMap           = map[*nats.Conn]nats.JetStreamContext{}
-	connectionFailed    = errors.New("connection failed")
-	connectWaitDuration = time.Second * 3
+	natsConns             []*nats.Conn
+	natsJsMap             = map[*nats.Conn]nats.JetStreamContext{}
+	connectionFailedError = errors.New("connection failed")
+	noConnectionError     = errors.New("connection failed")
+	connectWaitDuration   = time.Second * 3
 )
 
 type NatsConfig struct {
@@ -37,7 +38,7 @@ func Connect(natsConf *NatsConfig) error {
 		}
 
 		if nc.Status() != nats.CONNECTED {
-			return connectionFailed
+			return connectionFailedError
 		}
 	}
 
@@ -95,6 +96,10 @@ func connect(natsConf *NatsConfig) (*nats.Conn, error) {
 }
 
 func getConn() (*nats.Conn, error) {
+	if len(natsConns) == 0 {
+		return nil, noConnectionError
+	}
+
 	nc := natsConns[rand.Int()%len(natsConns)]
 
 	if nc.Status() != nats.CONNECTED {
@@ -102,7 +107,7 @@ func getConn() (*nats.Conn, error) {
 	}
 
 	if nc.Status() != nats.CONNECTED {
-		return nil, connectionFailed
+		return nil, connectionFailedError
 	}
 
 	return nc, nil
