@@ -12,12 +12,13 @@ import (
 )
 
 const SubWorkErrorRetryWait = time.Second * 5
-const MaxDeliveryCount = 10
+const MaxAckPendingCount = 1000
 
 var DefaultSubOpts = []nats.SubOpt{
 	nats.AckExplicit(),
 	nats.ManualAck(),
 	nats.DeliverLast(),
+	nats.MaxAckPending(MaxAckPendingCount),
 }
 
 func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
