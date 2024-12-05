@@ -14,7 +14,7 @@ var (
 	natsConns             []*nats.Conn
 	natsJsMap             = map[*nats.Conn]nats.JetStreamContext{}
 	connectionFailedError = errors.New("connection failed")
-	noConnectionError     = errors.New("connection failed")
+	noConnectionError     = errors.New("no connection")
 	connectWaitDuration   = time.Second * 3
 )
 

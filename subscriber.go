@@ -11,15 +11,17 @@ import (
 	"time"
 )
 
-const SubWorkErrorRetryWait = time.Second * 5
-const MaxAckPendingCount = 1000
+var (
+	SubWorkErrorRetryWait = time.Second * 5
+	MaxAckPendingCount    = 1000
 
-var DefaultSubOpts = []nats.SubOpt{
-	nats.AckExplicit(),
-	nats.ManualAck(),
-	nats.DeliverLast(),
-	nats.MaxAckPending(MaxAckPendingCount),
-}
+	DefaultSubOpts = []nats.SubOpt{
+		nats.AckExplicit(),
+		nats.ManualAck(),
+		nats.DeliverLast(),
+		nats.MaxAckPending(MaxAckPendingCount),
+	}
+)
 
 func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
 	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
@@ -128,7 +130,7 @@ func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration
 func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
 	delayHeader := msg.Header[headerDelay]
 	if len(delayHeader) == 0 {
-		msg.AckSync()
+		_ = msg.AckSync()
 		return
 	}
 
@@ -139,7 +141,7 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 
 	if now <= pubAt+delay {
 		dglogger.Debug(ctx, "not due, nak")
-		msg.NakWithDelay(time.Duration(delay))
+		_ = msg.NakWithDelay(time.Duration(delay))
 		time.Sleep(sleepDuration)
 		return
 	}
@@ -150,7 +152,7 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 	err := json.Unmarshal(data, t)
 	if err != nil {
 		dglogger.Errorf(ctx, "unmarshal json[%s] error: %v", data, err)
-		msg.AckSync()
+		_ = msg.AckSync()
 		return
 	}
 
@@ -185,7 +187,6 @@ func buildSubOpts(subject *NatsSubject) []nats.SubOpt {
 
 	subOpts = append(subOpts, nats.Durable(subject.GetDurable()))
 	subOpts = append(subOpts, nats.BindStream(subject.Category))
-	//subOpts = append(subOpts, nats.MaxDeliver(MaxDeliveryCount))
 	return subOpts
 }
 
@@ -196,8 +197,8 @@ func workAndAck[T any](ctx *dgctx.DgContext, msg *nats.Msg, t *T, workFn func(*d
 
 func ackOrNakByError(msg *nats.Msg, err error) {
 	if err != nil {
-		msg.NakWithDelay(SubWorkErrorRetryWait)
+		_ = msg.NakWithDelay(SubWorkErrorRetryWait)
 	} else {
-		msg.AckSync()
+		_ = msg.AckSync()
 	}
 }

@@ -1,19 +1,23 @@
 module github.com/darwinOrg/go-nats
 
-go 1.19
+go 1.23
 
 require (
-	github.com/darwinOrg/go-common v0.0.25
-	github.com/darwinOrg/go-logger v0.0.2
-	github.com/google/uuid v1.4.0
-	github.com/nats-io/nats.go v1.31.0
+	github.com/darwinOrg/go-common v0.1.72
+	github.com/darwinOrg/go-logger v0.0.9
+	github.com/google/uuid v1.6.0
+	github.com/nats-io/nats.go v1.37.0
 )
 
 require (
-	github.com/klauspost/compress v1.17.2 // indirect
-	github.com/nats-io/nkeys v0.4.6 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
+	github.com/nats-io/nkeys v0.4.8 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/crypto v0.30.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
 )
