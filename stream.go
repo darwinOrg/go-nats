@@ -9,7 +9,7 @@ import (
 
 var streamCache = map[string]*nats.StreamInfo{}
 
-func initStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
+func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	subjectId := subject.GetId()
 	if streamCache[subjectId] != nil {
 		dglogger.Debugf(ctx, "hit stream cache: %s", subject.Category)
@@ -50,6 +50,18 @@ func initStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	}
 
 	return nil
+}
+
+func DeleteStream(ctx *dgctx.DgContext, category string) error {
+	js, err := getJs()
+	if err != nil {
+		return err
+	}
+	err = js.DeleteStream(category)
+	if err != nil {
+		dglogger.Errorf(ctx, "delete stream[%s] error: %v", category, err)
+	}
+	return err
 }
 
 func buildStreamConfig(subject *NatsSubject) *nats.StreamConfig {

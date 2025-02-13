@@ -25,7 +25,7 @@ var (
 
 func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
 	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
-	err := initStream(ctx, subject)
+	err := InitStream(ctx, subject)
 	if err != nil {
 		return
 	}
@@ -67,7 +67,7 @@ func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error
 
 func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
 	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
-	err := initStream(ctx, subject)
+	err := InitStream(ctx, subject)
 	if err != nil {
 		return
 	}
@@ -101,7 +101,7 @@ func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
 
 func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
 	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
-	err := initStream(ctx, subject)
+	err := InitStream(ctx, subject)
 	if err != nil {
 		return
 	}

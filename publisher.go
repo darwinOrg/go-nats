@@ -56,7 +56,7 @@ func PublishRaw(ctx *dgctx.DgContext, subject *NatsSubject, data []byte) error {
 }
 
 func publishMsg(ctx *dgctx.DgContext, subject *NatsSubject, msg *nats.Msg) error {
-	err := initStream(ctx, subject)
+	err := InitStream(ctx, subject)
 	if err != nil {
 		return err
 	}
