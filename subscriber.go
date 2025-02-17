@@ -23,8 +23,10 @@ var (
 	}
 )
 
-func SubscribeJson[T any](subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
-	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+func SubscribeJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
+	if ctx == nil {
+		ctx = dgctx.SimpleDgContext()
+	}
 	err := InitStream(ctx, subject)
 	if err != nil {
 		return
@@ -58,15 +60,20 @@ func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error
 	err := json.Unmarshal(msg.Data, t)
 	if err != nil {
 		dglogger.Errorf(ctx, "unmarshal json[%s] error: %v", msg.Data, err)
-		msg.AckSync()
+		ase := msg.AckSync()
+		if ase != nil {
+			dglogger.Errorf(ctx, "msg.AckSync error: %v", ase)
+		}
 		return
 	}
 
 	workAndAck(ctx, msg, t, workFn)
 }
 
-func SubscribeRaw(subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
-	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
+	if ctx == nil {
+		ctx = dgctx.SimpleDgContext()
+	}
 	err := InitStream(ctx, subject)
 	if err != nil {
 		return
@@ -99,8 +106,10 @@ func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
 	ackOrNakByError(msg, err)
 }
 
-func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
-	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+func SubscribeJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
+	if ctx == nil {
+		ctx = dgctx.SimpleDgContext()
+	}
 	err := InitStream(ctx, subject)
 	if err != nil {
 		return
@@ -128,13 +137,16 @@ func SubscribeJsonDelay[T any](subject *NatsSubject, sleepDuration time.Duration
 }
 
 func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
+	ctx := buildDgContextFromMsg(msg)
 	delayHeader := msg.Header[headerDelay]
 	if len(delayHeader) == 0 {
-		_ = msg.AckSync()
+		ase := msg.AckSync()
+		if ase != nil {
+			dglogger.Errorf(ctx, "msg.AckSync error: %v", ase)
+		}
 		return
 	}
 
-	ctx := buildDgContextFromMsg(msg)
 	delay, _ := strconv.ParseInt(msg.Header[headerDelay][0], 10, 64)
 	pubAt, _ := strconv.ParseInt(msg.Header[headerPubAt][0], 10, 64)
 	now := time.Now().UnixMilli()
@@ -159,12 +171,17 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 	workAndAck(ctx, msg, t, workFn)
 }
 
-func Unsubscribe(subject *NatsSubject) error {
+func Unsubscribe(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	js, err := getJs()
 	if err != nil {
+		dglogger.Errorf(ctx, "getJs error: %v", err)
 		return err
 	}
-	return js.DeleteConsumer(subject.Category, subject.GetDurable())
+	err = js.DeleteConsumer(subject.Category, subject.GetDurable())
+	if err != nil {
+		dglogger.Errorf(ctx, "js.DeleteConsumer error: %v", err)
+	}
+	return err
 }
 
 func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
