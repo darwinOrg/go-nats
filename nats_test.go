@@ -42,13 +42,13 @@ func TestNats(t *testing.T) {
 	}
 	defer dgnats.Close()
 
-	dgnats.SubscribeJson(testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
+	dgnats.SubscribeJson(ctx, testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)
 		dglogger.Infof(ctx, "handle message: %s", string(jsonBytes))
 		return nil
 	})
 
-	dgnats.SubscribeJsonDelay(testDelaySubject, time.Second*1, func(ctx *dgctx.DgContext, s *TestStruct) error {
+	dgnats.SubscribeJsonDelay(ctx, testDelaySubject, time.Second*1, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)
 		dglogger.Infof(ctx, "handle delay message: %s", string(jsonBytes))
 		return nil
