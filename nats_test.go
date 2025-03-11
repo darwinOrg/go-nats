@@ -32,7 +32,7 @@ func TestNats(t *testing.T) {
 	err := dgnats.Connect(&dgnats.NatsConfig{
 		PoolSize:       10,
 		Servers:        []string{"nats://localhost:4222"},
-		ConnectionName: "startrek-mq",
+		ConnectionName: "startrek_mq",
 		Username:       "startrek_mq",
 		Password:       "cswjggljrmpypwfccarzpjxG-urepqldkhecvnzxzmngotaqs-bkwdvjgipruectqcowoqb6nj",
 	})

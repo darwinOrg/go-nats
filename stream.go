@@ -14,7 +14,6 @@ var streamCache = map[string]*nats.StreamInfo{}
 func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	subjectId := subject.GetId()
 	if streamCache[subjectId] != nil {
-		dglogger.Debugf(ctx, "hit stream cache: %s", subject.Category)
 		return nil
 	}
 
@@ -36,7 +35,7 @@ func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 		dglogger.Debugf(ctx, "update stream[%s] for %s", subject.Category, subject.Name)
 
 		streamInfo.Config.Subjects = append(streamInfo.Config.Subjects, subject.Name)
-		_, err := js.UpdateStream(&streamInfo.Config)
+		_, err = js.UpdateStream(&streamInfo.Config)
 		if err != nil {
 			return err
 		}
