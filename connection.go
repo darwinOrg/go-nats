@@ -4,8 +4,8 @@ import (
 	"errors"
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
-	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nuid"
 	"math/rand"
 	"time"
 )
@@ -52,7 +52,7 @@ func connect(natsConf *NatsConfig) (*nats.Conn, error) {
 	opts.User = natsConf.Username
 	opts.Password = natsConf.Password
 
-	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+	ctx := &dgctx.DgContext{TraceId: nuid.Next()}
 	opts.ConnectedCB = func(conn *nats.Conn) {
 		dglogger.Info(ctx, "nats: connection opened")
 	}

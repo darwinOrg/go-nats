@@ -44,7 +44,15 @@ func PublishJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, obj *T,
 }
 
 func PublishRaw(ctx *dgctx.DgContext, subject *NatsSubject, data []byte) error {
-	header := map[string][]string{constants.TraceId: {ctx.TraceId}}
+	return publishRawWithHeader(ctx, subject, map[string][]string{}, data)
+}
+
+func PublishRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, data []byte) error {
+	return publishRawWithHeader(ctx, subject, map[string][]string{headerTag: {tag}}, data)
+}
+
+func publishRawWithHeader(ctx *dgctx.DgContext, subject *NatsSubject, header map[string][]string, data []byte) error {
+	header[constants.TraceId] = []string{ctx.TraceId}
 
 	msg := &nats.Msg{
 		Subject: subject.Name,

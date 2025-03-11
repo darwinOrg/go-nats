@@ -5,7 +5,6 @@ import (
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
 	dgnats "github.com/darwinOrg/go-nats"
-	"github.com/google/uuid"
 	"testing"
 	"time"
 )
@@ -27,7 +26,7 @@ var testDelaySubject = &dgnats.NatsSubject{
 }
 
 func TestNats(t *testing.T) {
-	ctx := &dgctx.DgContext{TraceId: uuid.NewString()}
+	ctx := dgctx.SimpleDgContext()
 
 	err := dgnats.Connect(&dgnats.NatsConfig{
 		PoolSize:       10,

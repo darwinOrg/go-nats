@@ -5,8 +5,8 @@ import (
 	"github.com/darwinOrg/go-common/constants"
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
-	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nuid"
 	"strconv"
 	"time"
 )
@@ -106,6 +106,49 @@ func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
 	ackOrNakByError(msg, err)
 }
 
+func SubscribeRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, workFn func(*dgctx.DgContext, []byte) error) {
+	if ctx == nil {
+		ctx = dgctx.SimpleDgContext()
+	}
+	err := InitStream(ctx, subject)
+	if err != nil {
+		return
+	}
+
+	js, err := getJs()
+	if err != nil {
+		dglogger.Panicf(ctx, "get jet stream error: %v", err)
+		return
+	}
+
+	if subject.Group != "" {
+		_, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+			subscribeRawWithTag(msg, tag, workFn)
+		}, buildSubOpts(subject)...)
+	} else {
+		_, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
+			subscribeRawWithTag(msg, tag, workFn)
+		}, buildSubOpts(subject)...)
+	}
+
+	if err != nil {
+		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+	}
+}
+
+func subscribeRawWithTag(msg *nats.Msg, tag string, workFn func(*dgctx.DgContext, []byte) error) {
+	if len(msg.Header) == 0 {
+		return
+	}
+
+	header := msg.Header
+	if ts, ok := header[headerTag]; !ok || ts[0] != tag {
+		return
+	}
+
+	subscribeRaw(msg, workFn)
+}
+
 func SubscribeJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
 	if ctx == nil {
 		ctx = dgctx.SimpleDgContext()
@@ -191,7 +234,7 @@ func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
 		traceId = msg.Header[constants.TraceId][0]
 	}
 	if traceId == "" {
-		traceId = uuid.NewString()
+		traceId = nuid.Next()
 	}
 	return &dgctx.DgContext{TraceId: traceId}
 }
