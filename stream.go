@@ -1,10 +1,12 @@
 package dgnats
 
 import (
+	"errors"
 	dgcoll "github.com/darwinOrg/go-common/collection"
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
+	"strings"
 )
 
 var streamCache = map[string]*nats.StreamInfo{}
@@ -40,11 +42,14 @@ func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 		}
 	} else {
 		dglogger.Debugf(ctx, "add stream %s", subject.Category)
-
 		si, err := js.AddStream(buildStreamConfig(subject))
 		if err != nil {
-			dglogger.Errorf(ctx, "add stream[%s] error: %v", subject.Category, err)
-			return err
+			if errors.Is(err, nats.ErrStreamNameAlreadyInUse) || strings.Contains(err.Error(), "existing") {
+				return nil
+			} else {
+				dglogger.Errorf(ctx, "add stream[%s] error: %v", subject.Category, err)
+				return err
+			}
 		}
 		streamInfo = si
 	}
