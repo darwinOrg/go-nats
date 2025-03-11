@@ -107,6 +107,11 @@ func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
 }
 
 func SubscribeRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, workFn func(*dgctx.DgContext, []byte) error) {
+	if tag == "" {
+		SubscribeRaw(ctx, subject, workFn)
+		return
+	}
+
 	if ctx == nil {
 		ctx = dgctx.SimpleDgContext()
 	}
