@@ -48,6 +48,10 @@ func PublishRaw(ctx *dgctx.DgContext, subject *NatsSubject, data []byte) error {
 }
 
 func PublishRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, data []byte) error {
+	if tag == "" {
+		return PublishRaw(ctx, subject, data)
+	}
+
 	return publishRawWithHeader(ctx, subject, map[string][]string{headerTag: {tag}}, data)
 }
 
