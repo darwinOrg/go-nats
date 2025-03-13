@@ -147,11 +147,9 @@ func subscribeRawWithTag(msg *nats.Msg, tag string, workFn func(*dgctx.DgContext
 	}
 
 	header := msg.Header
-	if ts, ok := header[headerTag]; !ok || ts[0] != tag {
-		return
+	if ts, ok := header[headerTag]; !ok || (len(ts) > 0 && ts[0] == tag) {
+		subscribeRaw(msg, workFn)
 	}
-
-	subscribeRaw(msg, workFn)
 }
 
 func SubscribeJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
