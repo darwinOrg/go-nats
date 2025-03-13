@@ -16,13 +16,13 @@ type TestStruct struct {
 var testSubject = &dgnats.NatsSubject{
 	Category: "test",
 	Name:     "test",
-	Group:    "queue",
+	Group:    "group",
 }
 
 var testDelaySubject = &dgnats.NatsSubject{
 	Category: "test",
 	Name:     "test-delay",
-	Group:    "queue-delay",
+	Group:    "group-delay",
 }
 
 func TestNats(t *testing.T) {
@@ -41,9 +41,21 @@ func TestNats(t *testing.T) {
 	}
 	defer dgnats.Close()
 
+	dgnats.SubscribeRawWithTag(ctx, testSubject, "tag1", func(ctx *dgctx.DgContext, data []byte) error {
+		jsonBytes, _ := json.Marshal(string(data))
+		dglogger.Infof(ctx, "handle message raw1: %s", string(jsonBytes))
+		return nil
+	})
+
+	dgnats.SubscribeRawWithTag(ctx, testSubject, "tag2", func(ctx *dgctx.DgContext, data []byte) error {
+		jsonBytes, _ := json.Marshal(string(data))
+		dglogger.Infof(ctx, "handle message raw2: %s", string(jsonBytes))
+		return nil
+	})
+
 	dgnats.SubscribeJson(ctx, testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)
-		dglogger.Infof(ctx, "handle message: %s", string(jsonBytes))
+		dglogger.Infof(ctx, "handle message json: %s", string(jsonBytes))
 		return nil
 	})
 

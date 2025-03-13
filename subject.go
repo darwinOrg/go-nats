@@ -1,6 +1,7 @@
 package dgnats
 
 import (
+	"github.com/darwinOrg/go-common/utils"
 	"regexp"
 )
 
@@ -26,9 +27,9 @@ func (s *NatsSubject) GetId() string {
 	return illegalRegex.ReplaceAllString(id, dash)
 }
 
-func (s *NatsSubject) GetDurable() string {
+func (s *NatsSubject) GetDurable(tag string) string {
 	if s.Group != "" {
-		return s.GetId()
+		return s.GetId() + utils.IfReturn(tag != "", "-"+tag, "")
 	}
 
 	return ""
