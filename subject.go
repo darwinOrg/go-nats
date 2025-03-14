@@ -24,13 +24,17 @@ func (s *NatsSubject) GetId() string {
 		id = id + "-" + s.Group
 	}
 
-	return illegalRegex.ReplaceAllString(id, dash)
+	return ReplaceIllegalCharacter(id)
 }
 
 func (s *NatsSubject) GetDurable(tag string) string {
 	if s.Group != "" {
-		return s.GetId() + utils.IfReturn(tag != "", "-"+tag, "")
+		return s.GetId() + utils.IfReturn(tag != "", "-"+ReplaceIllegalCharacter(tag), "")
 	}
 
 	return ""
+}
+
+func ReplaceIllegalCharacter(str string) string {
+	return illegalRegex.ReplaceAllString(str, dash)
 }
