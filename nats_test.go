@@ -61,7 +61,7 @@ func TestPubSub(t *testing.T) {
 		return nil
 	})
 
-	dgnats.SubscribeJsonDelay(ctx, testDelaySubject, time.Second*1, func(ctx *dgctx.DgContext, s *TestStruct) error {
+	dgnats.SubscribeJsonDelay(ctx, testDelaySubject, time.Second*4, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)
 		dglogger.Infof(ctx, "handle delay message: %s", string(jsonBytes))
 		return nil

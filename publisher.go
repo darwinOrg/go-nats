@@ -30,7 +30,7 @@ func PublishJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, obj *T,
 	header := map[string][]string{
 		constants.TraceId: {ctx.TraceId},
 		headerPubAt:       {strconv.FormatInt(time.Now().UnixMilli(), 10)},
-		headerDelay:       {strconv.FormatInt(int64(duration), 10)},
+		headerDelay:       {strconv.FormatInt(duration.Milliseconds(), 10)},
 	}
 
 	msg := &nats.Msg{

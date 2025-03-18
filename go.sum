@@ -1,7 +1,7 @@
 github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0=
 github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/darwinOrg/go-common v0.1.80 h1:sas1xFcNHexgo25dCwRYlmyqIyz9+E/IvLpHQ7mjfG4=
-github.com/darwinOrg/go-common v0.1.80/go.mod h1:pItL/4ZV0bU64N2qD9ACpvDlYjeomAbheIzPXKqbb88=
+github.com/darwinOrg/go-common v0.1.81 h1:cRV3fimwzOHfY5e6n0vWWcC1yKIGMajf7EsE6JuQtW8=
+github.com/darwinOrg/go-common v0.1.81/go.mod h1:pItL/4ZV0bU64N2qD9ACpvDlYjeomAbheIzPXKqbb88=
 github.com/darwinOrg/go-logger v0.0.9 h1:6SxIYuqpIG6ARl/bEvWZ3eTRBnN3DYPfj76bxLWbrSc=
 github.com/darwinOrg/go-logger v0.0.9/go.mod h1:Hc2QLNo8gcOoMgk4qoGA69JBe7scvhYgf0mhXYAFd1s=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
