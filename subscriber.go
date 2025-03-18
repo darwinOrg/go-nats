@@ -205,11 +205,10 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 	time.Sleep(sleepDuration)
 	pubAt, _ := strconv.ParseInt(msg.Header[headerPubAt][0], 10, 64)
 	delay, _ := strconv.ParseInt(delayHeader[0], 10, 64)
-	now := time.Now().UnixMilli()
 
-	if now <= pubAt+delay {
+	if time.Now().UnixNano() <= pubAt+delay {
 		dglogger.Debug(ctx, "not due, nak")
-		nwde := msg.NakWithDelay(time.Millisecond * time.Duration(delay))
+		nwde := msg.NakWithDelay(time.Duration(delay))
 		if nwde != nil {
 			dglogger.Errorf(ctx, "msg.NakWithDelay error: %v", nwde)
 		}
