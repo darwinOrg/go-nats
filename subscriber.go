@@ -204,7 +204,7 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 
 	time.Sleep(sleepDuration)
 	pubAt, _ := strconv.ParseInt(msg.Header[headerPubAt][0], 10, 64)
-	delay, _ := strconv.ParseInt(msg.Header[headerDelay][0], 10, 64)
+	delay, _ := strconv.ParseInt(delayHeader[0], 10, 64)
 	now := time.Now().UnixMilli()
 
 	if now <= pubAt+delay {
