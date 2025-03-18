@@ -26,7 +26,7 @@ var testDelaySubject = &dgnats.NatsSubject{
 	Group:    "group-delay",
 }
 
-func TestNats(t *testing.T) {
+func TestPubSub(t *testing.T) {
 	ctx := dgctx.SimpleDgContext()
 
 	err := dgnats.Connect(&dgnats.NatsConfig{
