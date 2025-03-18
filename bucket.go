@@ -7,7 +7,7 @@ type NatsBucket struct {
 }
 
 func NewNatsBucket(bucket string) (*NatsBucket, error) {
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
 		return nil, err
 	}

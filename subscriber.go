@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/darwinOrg/go-common/constants"
 	dgctx "github.com/darwinOrg/go-common/context"
+	dgsys "github.com/darwinOrg/go-common/sys"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nuid"
@@ -32,9 +33,13 @@ func SubscribeJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, workFn fun
 		return
 	}
 
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
-		dglogger.Panicf(ctx, "get jet stream error: %v", err)
+		if dgsys.IsFormalProfile() {
+			dglogger.Panicf(ctx, "get jet stream error: %v", err)
+		} else {
+			dglogger.Errorf(ctx, "get jet stream error: %v", err)
+		}
 		return
 	}
 
@@ -67,7 +72,7 @@ func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error
 		return
 	}
 
-	workAndAck(msg, t, workFn)
+	workAndAck(ctx, msg, t, workFn)
 }
 
 func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
@@ -79,7 +84,7 @@ func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx
 		return
 	}
 
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
 		dglogger.Panicf(ctx, "get jet stream error: %v", err)
 		return
@@ -96,7 +101,11 @@ func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx
 	}
 
 	if err != nil {
-		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		if dgsys.IsFormalProfile() {
+			dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		} else {
+			dglogger.Errorf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		}
 	}
 }
 
@@ -120,7 +129,7 @@ func SubscribeRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string,
 		return
 	}
 
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
 		dglogger.Panicf(ctx, "get jet stream error: %v", err)
 		return
@@ -161,7 +170,7 @@ func SubscribeJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, sleep
 		return
 	}
 
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
 		dglogger.Panicf(ctx, "get jet stream error: %v", err)
 		return
@@ -199,7 +208,10 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 
 	if now <= pubAt+delay {
 		dglogger.Debug(ctx, "not due, nak")
-		_ = msg.NakWithDelay(time.Duration(delay))
+		nwde := msg.NakWithDelay(time.Duration(delay))
+		if nwde != nil {
+			dglogger.Errorf(ctx, "msg.NakWithDelay error: %v", nwde)
+		}
 		time.Sleep(sleepDuration)
 		return
 	}
@@ -210,17 +222,20 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 	err := json.Unmarshal(data, t)
 	if err != nil {
 		dglogger.Errorf(ctx, "unmarshal json[%s] error: %v", data, err)
-		_ = msg.AckSync()
+		ase := msg.AckSync()
+		if ase != nil {
+			dglogger.Errorf(ctx, "msg.AckSync error: %v", ase)
+		}
 		return
 	}
 
-	workAndAck(msg, t, workFn)
+	workAndAck(ctx, msg, t, workFn)
 }
 
 func Unsubscribe(ctx *dgctx.DgContext, subject *NatsSubject, tag string) error {
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
-		dglogger.Errorf(ctx, "getJs error: %v", err)
+		dglogger.Errorf(ctx, "GetJs error: %v", err)
 		return err
 	}
 	err = js.DeleteConsumer(subject.Category, subject.GetDurable(tag))
@@ -244,17 +259,13 @@ func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
 
 func buildSubOpts(subject *NatsSubject, tag string) []nats.SubOpt {
 	var subOpts []nats.SubOpt
-	for _, opt := range DefaultSubOpts {
-		subOpts = append(subOpts, opt)
-	}
-
-	subOpts = append(subOpts, nats.Durable(subject.GetDurable(tag)))
-	subOpts = append(subOpts, nats.BindStream(subject.Category))
+	subOpts = append(subOpts, DefaultSubOpts...)
+	subOpts = append(subOpts, nats.Durable(subject.GetDurable(tag)), nats.BindStream(subject.Category))
 	return subOpts
 }
 
-func workAndAck[T any](msg *nats.Msg, t *T, workFn func(*dgctx.DgContext, *T) error) {
-	err := workFn(buildDgContextFromMsg(msg), t)
+func workAndAck[T any](ctx *dgctx.DgContext, msg *nats.Msg, t *T, workFn func(*dgctx.DgContext, *T) error) {
+	err := workFn(ctx, t)
 	ackOrNakByError(msg, err)
 }
 

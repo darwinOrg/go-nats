@@ -5,6 +5,7 @@ import (
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
 	dgnats "github.com/darwinOrg/go-nats"
+	"os"
 	"testing"
 	"time"
 )
@@ -78,4 +79,21 @@ func TestNats(t *testing.T) {
 	}
 
 	time.Sleep(time.Second * 5)
+}
+
+func TestDeleteStream(t *testing.T) {
+	err := dgnats.Connect(&dgnats.NatsConfig{
+		PoolSize:       2,
+		Servers:        []string{"nats://localhost:4222"},
+		ConnectionName: "startrek_mq",
+		Username:       "startrek_mq",
+		Password:       "cswjggljrmpypwfccarzpjxG-urepqldkhecvnzxzmngotaqs-bkwdvjgipruectqcowoqb6nj",
+	})
+	if err != nil {
+		return
+	}
+	defer dgnats.Close()
+
+	js, _ := dgnats.GetJs()
+	_ = js.DeleteStream(os.Getenv("NATS_STREAM_NAME"))
 }

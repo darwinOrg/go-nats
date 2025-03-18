@@ -73,7 +73,7 @@ func publishMsg(ctx *dgctx.DgContext, subject *NatsSubject, msg *nats.Msg) error
 		return err
 	}
 
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
 		return err
 	}

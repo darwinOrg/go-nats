@@ -17,7 +17,7 @@ func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 		return nil
 	}
 
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 }
 
 func DeleteStream(ctx *dgctx.DgContext, category string) error {
-	js, err := getJs()
+	js, err := GetJs()
 	if err != nil {
 		return err
 	}

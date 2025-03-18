@@ -113,7 +113,7 @@ func getConn() (*nats.Conn, error) {
 	return nc, nil
 }
 
-func getJs() (nats.JetStreamContext, error) {
+func GetJs() (nats.JetStreamContext, error) {
 	nc, err := getConn()
 	if err != nil {
 		return nil, err
