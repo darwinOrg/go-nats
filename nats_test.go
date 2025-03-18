@@ -83,6 +83,8 @@ func TestPubSub(t *testing.T) {
 }
 
 func TestDeleteStream(t *testing.T) {
+	// export NATS_URL=nats://127.0.0.1:14222
+	// export NATS_STREAM_NAME=ARE_YOU_OK
 	err := dgnats.Connect(&dgnats.NatsConfig{
 		PoolSize:       2,
 		Servers:        []string{os.Getenv("NATS_URL")},
@@ -97,4 +99,24 @@ func TestDeleteStream(t *testing.T) {
 
 	js, _ := dgnats.GetJs()
 	_ = js.DeleteStream(os.Getenv("NATS_STREAM_NAME"))
+}
+
+func TestDeleteAllStream(t *testing.T) {
+	err := dgnats.Connect(&dgnats.NatsConfig{
+		PoolSize:       2,
+		Servers:        []string{os.Getenv("NATS_URL")},
+		ConnectionName: "startrek_mq",
+		Username:       "startrek_mq",
+		Password:       "cswjggljrmpypwfccarzpjxG-urepqldkhecvnzxzmngotaqs-bkwdvjgipruectqcowoqb6nj",
+	})
+	if err != nil {
+		return
+	}
+	defer dgnats.Close()
+
+	js, _ := dgnats.GetJs()
+	streams := js.Streams()
+	for stream := range streams {
+		_ = js.DeleteStream(stream.Config.Name)
+	}
 }
