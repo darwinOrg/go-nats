@@ -67,7 +67,7 @@ func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error
 		return
 	}
 
-	workAndAck(ctx, msg, t, workFn)
+	workAndAck(msg, t, workFn)
 }
 
 func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
@@ -214,7 +214,7 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 		return
 	}
 
-	workAndAck(ctx, msg, t, workFn)
+	workAndAck(msg, t, workFn)
 }
 
 func Unsubscribe(ctx *dgctx.DgContext, subject *NatsSubject, tag string) error {
@@ -253,8 +253,8 @@ func buildSubOpts(subject *NatsSubject, tag string) []nats.SubOpt {
 	return subOpts
 }
 
-func workAndAck[T any](ctx *dgctx.DgContext, msg *nats.Msg, t *T, workFn func(*dgctx.DgContext, *T) error) {
-	err := workFn(ctx, t)
+func workAndAck[T any](msg *nats.Msg, t *T, workFn func(*dgctx.DgContext, *T) error) {
+	err := workFn(buildDgContextFromMsg(msg), t)
 	ackOrNakByError(msg, err)
 }
 
