@@ -56,16 +56,24 @@ func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	return nil
 }
 
-func DeleteStream(ctx *dgctx.DgContext, category string) error {
+func DeleteStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	js, err := GetJs()
 	if err != nil {
 		return err
 	}
-	err = js.DeleteStream(category)
+	err = js.DeleteStream(subject.Category)
 	if err != nil {
-		dglogger.Errorf(ctx, "delete stream[%s] error: %v", category, err)
+		dglogger.Errorf(ctx, "delete stream[%s] error: %v", subject.Category, err)
+		return err
 	}
-	return err
+
+	subjectId := subject.GetId()
+	if streamCache[subjectId] != nil {
+		return nil
+	}
+	delete(streamCache, subjectId)
+
+	return nil
 }
 
 func buildStreamConfig(subject *NatsSubject) *nats.StreamConfig {

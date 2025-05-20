@@ -84,7 +84,7 @@ func TestPubSub(t *testing.T) {
 
 func TestDeleteStream(t *testing.T) {
 	// export NATS_URL=nats://127.0.0.1:14222
-	// export NATS_STREAM_NAME=ARE_YOU_OK
+	// export NATS_STREAM_NAME=user_recharge_by_auser
 	err := dgnats.Connect(&dgnats.NatsConfig{
 		PoolSize:       2,
 		Servers:        []string{os.Getenv("NATS_URL")},
