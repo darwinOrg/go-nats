@@ -68,7 +68,7 @@ func DeleteStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	}
 
 	subjectId := subject.GetId()
-	if streamCache[subjectId] != nil {
+	if streamCache[subjectId] == nil {
 		return nil
 	}
 	delete(streamCache, subjectId)
