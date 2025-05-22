@@ -43,25 +43,25 @@ func TestPubSub(t *testing.T) {
 	}
 	defer dgnats.Close()
 
-	dgnats.SubscribeRawWithTag(ctx, testSubject, "tag1", func(ctx *dgctx.DgContext, data []byte) error {
+	_, _ = dgnats.SubscribeRawWithTag(ctx, testSubject, "tag1", func(ctx *dgctx.DgContext, data []byte) error {
 		jsonBytes, _ := json.Marshal(string(data))
 		dglogger.Infof(ctx, "handle message raw1: %s", string(jsonBytes))
 		return nil
 	})
 
-	dgnats.SubscribeRawWithTag(ctx, testSubject, "tag2", func(ctx *dgctx.DgContext, data []byte) error {
+	_, _ = dgnats.SubscribeRawWithTag(ctx, testSubject, "tag2", func(ctx *dgctx.DgContext, data []byte) error {
 		jsonBytes, _ := json.Marshal(string(data))
 		dglogger.Infof(ctx, "handle message raw2: %s", string(jsonBytes))
 		return nil
 	})
 
-	dgnats.SubscribeJson(ctx, testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
+	_, _ = dgnats.SubscribeJson(ctx, testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)
 		dglogger.Infof(ctx, "handle message json: %s", string(jsonBytes))
 		return nil
 	})
 
-	dgnats.SubscribeJsonDelay(ctx, testDelaySubject, time.Second, func(ctx *dgctx.DgContext, s *TestStruct) error {
+	_, _ = dgnats.SubscribeJsonDelay(ctx, testDelaySubject, time.Second, func(ctx *dgctx.DgContext, s *TestStruct) error {
 		jsonBytes, _ := json.Marshal(s)
 		dglogger.Infof(ctx, "handle delay message: %s", string(jsonBytes))
 		return nil

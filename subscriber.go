@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/darwinOrg/go-common/constants"
 	dgctx "github.com/darwinOrg/go-common/context"
-	dgsys "github.com/darwinOrg/go-common/sys"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nuid"
@@ -24,38 +23,37 @@ var (
 	}
 )
 
-func SubscribeJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) {
+func SubscribeJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) (*nats.Subscription, error) {
 	if ctx == nil {
 		ctx = dgctx.SimpleDgContext()
 	}
 	err := InitStream(ctx, subject)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	js, err := GetJs()
 	if err != nil {
-		if dgsys.IsFormalProfile() {
-			dglogger.Panicf(ctx, "get jet stream error: %v", err)
-		} else {
-			dglogger.Errorf(ctx, "get jet stream error: %v", err)
-		}
-		return
+		dglogger.Errorf(ctx, "get jet stream error: %v", err)
+		return nil, err
 	}
 
+	var sub *nats.Subscription
 	if subject.Group != "" {
-		_, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+		sub, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeJson(msg, workFn)
 		}, buildSubOpts(subject, "")...)
 	} else {
-		_, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
+		sub, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeJson(msg, workFn)
 		}, buildSubOpts(subject, "")...)
 	}
-
 	if err != nil {
-		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Errorf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		return nil, err
 	}
+
+	return sub, nil
 }
 
 func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error) {
@@ -75,38 +73,37 @@ func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error
 	workAndAck(ctx, msg, t, workFn)
 }
 
-func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) {
+func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) (*nats.Subscription, error) {
 	if ctx == nil {
 		ctx = dgctx.SimpleDgContext()
 	}
 	err := InitStream(ctx, subject)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	js, err := GetJs()
 	if err != nil {
-		dglogger.Panicf(ctx, "get jet stream error: %v", err)
-		return
+		dglogger.Errorf(ctx, "get jet stream error: %v", err)
+		return nil, err
 	}
 
+	var sub *nats.Subscription
 	if subject.Group != "" {
-		_, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+		sub, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeRaw(msg, workFn)
 		}, buildSubOpts(subject, "")...)
 	} else {
-		_, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
+		sub, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeRaw(msg, workFn)
 		}, buildSubOpts(subject, "")...)
 	}
-
 	if err != nil {
-		if dgsys.IsFormalProfile() {
-			dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
-		} else {
-			dglogger.Errorf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
-		}
+		dglogger.Errorf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		return nil, err
 	}
+
+	return sub, nil
 }
 
 func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
@@ -115,10 +112,9 @@ func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
 	ackOrNakByError(msg, err)
 }
 
-func SubscribeRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, workFn func(*dgctx.DgContext, []byte) error) {
+func SubscribeRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, workFn func(*dgctx.DgContext, []byte) error) (*nats.Subscription, error) {
 	if tag == "" {
-		SubscribeRaw(ctx, subject, workFn)
-		return
+		return SubscribeRaw(ctx, subject, workFn)
 	}
 
 	if ctx == nil {
@@ -126,28 +122,32 @@ func SubscribeRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string,
 	}
 	err := InitStream(ctx, subject)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	js, err := GetJs()
 	if err != nil {
-		dglogger.Panicf(ctx, "get jet stream error: %v", err)
-		return
+		dglogger.Errorf(ctx, "get jet stream error: %v", err)
+		return nil, err
 	}
 
+	var sub *nats.Subscription
 	if subject.Group != "" {
-		_, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+		sub, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeRawWithTag(msg, tag, workFn)
 		}, buildSubOpts(subject, tag)...)
 	} else {
-		_, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
+		sub, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeRawWithTag(msg, tag, workFn)
 		}, buildSubOpts(subject, tag)...)
 	}
 
 	if err != nil {
-		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Errorf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		return nil, err
 	}
+
+	return sub, nil
 }
 
 func subscribeRawWithTag(msg *nats.Msg, tag string, workFn func(*dgctx.DgContext, []byte) error) {
@@ -161,34 +161,38 @@ func subscribeRawWithTag(msg *nats.Msg, tag string, workFn func(*dgctx.DgContext
 	}
 }
 
-func SubscribeJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
+func SubscribeJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) (*nats.Subscription, error) {
 	if ctx == nil {
 		ctx = dgctx.SimpleDgContext()
 	}
 	err := InitStream(ctx, subject)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	js, err := GetJs()
 	if err != nil {
-		dglogger.Panicf(ctx, "get jet stream error: %v", err)
-		return
+		dglogger.Errorf(ctx, "get jet stream error: %v", err)
+		return nil, err
 	}
 
+	var sub *nats.Subscription
 	if subject.Group != "" {
-		_, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
+		sub, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
 		}, buildSubOpts(subject, "")...)
 	} else {
-		_, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
+		sub, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeJsonDelay[T](msg, subject, sleepDuration, workFn)
 		}, buildSubOpts(subject, "")...)
 	}
 
 	if err != nil {
-		dglogger.Panicf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		dglogger.Errorf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
+		return nil, err
 	}
+
+	return sub, nil
 }
 
 func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) {
