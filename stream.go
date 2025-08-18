@@ -2,18 +2,20 @@ package dgnats
 
 import (
 	"errors"
+	"strings"
+	"sync"
+
 	dgcoll "github.com/darwinOrg/go-common/collection"
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
-	"strings"
 )
 
-var streamCache = map[string]*nats.StreamInfo{}
+var streamCache = sync.Map{}
 
 func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	subjectId := subject.GetId()
-	if streamCache[subjectId] != nil {
+	if _, ok := streamCache.Load(subjectId); ok {
 		return nil
 	}
 
@@ -23,7 +25,7 @@ func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	}
 	streamInfo, _ := js.StreamInfo(subject.Category)
 	defer func() {
-		streamCache[subjectId] = streamInfo
+		streamCache.Store(subjectId, streamInfo)
 	}()
 
 	if streamInfo != nil {
@@ -68,10 +70,10 @@ func DeleteStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	}
 
 	subjectId := subject.GetId()
-	if streamCache[subjectId] == nil {
+	if _, ok := streamCache.Load(subjectId); !ok {
 		return nil
 	}
-	delete(streamCache, subjectId)
+	streamCache.Delete(subjectId)
 
 	return nil
 }

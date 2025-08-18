@@ -3,9 +3,9 @@ module github.com/darwinOrg/go-nats
 go 1.23.1
 
 require (
-	github.com/darwinOrg/go-common v0.1.87
+	github.com/darwinOrg/go-common v0.2.5
 	github.com/darwinOrg/go-logger v0.0.12
-	github.com/nats-io/nats.go v1.42.0
+	github.com/nats-io/nats.go v1.44.0
 	github.com/nats-io/nuid v1.0.1
 )
 
@@ -17,6 +17,6 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/crypto v0.41.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
 )
