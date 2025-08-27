@@ -2,13 +2,14 @@ package dgnats
 
 import (
 	"encoding/json"
+	"strconv"
+	"time"
+
 	"github.com/darwinOrg/go-common/constants"
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nuid"
-	"strconv"
-	"time"
 )
 
 var (

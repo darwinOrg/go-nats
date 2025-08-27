@@ -2,13 +2,14 @@ package dgnats_test
 
 import (
 	"encoding/json"
+	"os"
+	"testing"
+	"time"
+
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
 	dgnats "github.com/darwinOrg/go-nats"
 	"github.com/nats-io/nats.go"
-	"os"
-	"testing"
-	"time"
 )
 
 type TestStruct struct {

@@ -1,8 +1,9 @@
 package dgnats
 
 import (
-	"github.com/darwinOrg/go-common/utils"
 	"regexp"
+
+	"github.com/darwinOrg/go-common/utils"
 )
 
 const (

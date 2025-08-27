@@ -2,12 +2,13 @@ package dgnats
 
 import (
 	"errors"
+	"math/rand"
+	"time"
+
 	dgctx "github.com/darwinOrg/go-common/context"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nuid"
-	"math/rand"
-	"time"
 )
 
 var (
