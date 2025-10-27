@@ -3,9 +3,9 @@ module github.com/darwinOrg/go-nats
 go 1.23.1
 
 require (
-	github.com/darwinOrg/go-common v0.2.17
+	github.com/darwinOrg/go-common v0.2.21
 	github.com/darwinOrg/go-logger v0.0.15
-	github.com/nats-io/nats.go v1.46.0
+	github.com/nats-io/nats.go v1.47.0
 	github.com/nats-io/nuid v1.0.1
 )
 
