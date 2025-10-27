@@ -24,8 +24,6 @@ var (
 	}
 )
 
-var globalSemaphore = make(chan struct{}, 200) // 最多 200 个并发
-
 func SubscribeJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) (*nats.Subscription, error) {
 	if ctx == nil {
 		ctx = dgctx.SimpleDgContext()
@@ -60,27 +58,20 @@ func SubscribeJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, workFn fun
 }
 
 func subscribeJson[T any](msg *nats.Msg, workFn func(*dgctx.DgContext, *T) error) {
-	select {
-	case globalSemaphore <- struct{}{}:
-		go func() {
-			defer func() { <-globalSemaphore }()
-			ctx := buildDgContextFromMsg(msg)
-			dglogger.Infof(ctx, "[%s] receive json message: %s", msg.Subject, string(msg.Data))
-			t := new(T)
-			if err := json.Unmarshal(msg.Data, t); err != nil {
-				dglogger.Errorf(ctx, "unmarshal error: %v", err)
-				ase := msg.AckSync()
-				if ase != nil {
-					_ = msg.NakWithDelay(SubWorkErrorRetryWait)
-				}
-				return
-			}
-			workAndAck(ctx, msg, t, workFn)
-		}()
-	default:
-		dglogger.Warnf(buildDgContextFromMsg(msg), "too many concurrent messages, NAK")
-		_ = msg.NakWithDelay(SubWorkErrorRetryWait)
+	ctx := buildDgContextFromMsg(msg)
+	dglogger.Infof(ctx, "[%s] receive json message: %s", msg.Subject, string(msg.Data))
+	t := new(T)
+	err := json.Unmarshal(msg.Data, t)
+	if err != nil {
+		dglogger.Errorf(ctx, "unmarshal json[%s] error: %v", msg.Data, err)
+		ase := msg.AckSync()
+		if ase != nil {
+			dglogger.Errorf(ctx, "msg.AckSync error: %v", ase)
+		}
+		return
 	}
+
+	workAndAck(ctx, msg, t, workFn)
 }
 
 func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, []byte) error) (*nats.Subscription, error) {
@@ -117,19 +108,9 @@ func SubscribeRaw(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx
 }
 
 func subscribeRaw(msg *nats.Msg, workFn func(*dgctx.DgContext, []byte) error) {
-	select {
-	case globalSemaphore <- struct{}{}:
-		go func() {
-			defer func() { <-globalSemaphore }()
-			ctx := buildDgContextFromMsg(msg)
-			dataCopy := make([]byte, len(msg.Data))
-			copy(dataCopy, msg.Data)
-			err := workFn(ctx, dataCopy)
-			ackOrNakByError(msg, err)
-		}()
-	default:
-		_ = msg.NakWithDelay(time.Second * 3)
-	}
+	ctx := buildDgContextFromMsg(msg)
+	err := workFn(ctx, msg.Data)
+	ackOrNakByError(msg, err)
 }
 
 func SubscribeRawWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, workFn func(*dgctx.DgContext, []byte) error) (*nats.Subscription, error) {
@@ -222,7 +203,6 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 		ase := msg.AckSync()
 		if ase != nil {
 			dglogger.Errorf(ctx, "msg.AckSync error: %v", ase)
-			_ = msg.NakWithDelay(SubWorkErrorRetryWait)
 		}
 		return
 	}
@@ -248,7 +228,6 @@ func subscribeJsonDelay[T any](msg *nats.Msg, subject *NatsSubject, sleepDuratio
 		ase := msg.AckSync()
 		if ase != nil {
 			dglogger.Errorf(ctx, "msg.AckSync error: %v", ase)
-			_ = msg.NakWithDelay(SubWorkErrorRetryWait)
 		}
 		return
 	}
@@ -297,9 +276,6 @@ func ackOrNakByError(msg *nats.Msg, err error) {
 	if err != nil {
 		_ = msg.NakWithDelay(SubWorkErrorRetryWait)
 	} else {
-		ase := msg.AckSync()
-		if ase != nil {
-			_ = msg.NakWithDelay(SubWorkErrorRetryWait)
-		}
+		_ = msg.AckSync()
 	}
 }
