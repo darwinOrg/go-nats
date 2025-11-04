@@ -2,8 +2,8 @@ github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/darwinOrg/go-common v0.2.21 h1:NlnLftbupyn6GfmBgA5FYpah1qLkavlDiXn+eK8Q8UQ=
 github.com/darwinOrg/go-common v0.2.21/go.mod h1:pItL/4ZV0bU64N2qD9ACpvDlYjeomAbheIzPXKqbb88=
-github.com/darwinOrg/go-logger v0.0.15 h1:zPrIt2gPyIhgQ4FwiBB0wl7V5+rJCqsavWRHzpUsN7Y=
-github.com/darwinOrg/go-logger v0.0.15/go.mod h1:oiySTEPqKFmU7QrukvoPymjHH6eUfq4K5M1nom66vHY=
+github.com/darwinOrg/go-logger v0.0.16 h1:rTsT6N9oiEAgM+ivr2BMAcS3qzj41fyNFxv9aDmZDO4=
+github.com/darwinOrg/go-logger v0.0.16/go.mod h1:tjeZSX8c8hTtk0r6hEQi16/F4dRcoiJ1H+e15wA91Q0=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
