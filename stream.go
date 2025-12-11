@@ -4,14 +4,18 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"time"
 
 	dgcoll "github.com/darwinOrg/go-common/collection"
 	dgctx "github.com/darwinOrg/go-common/context"
+	"github.com/darwinOrg/go-common/utils"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
 )
 
 var streamCache = sync.Map{}
+
+const defaultMaxAge = 31 * 24 * time.Hour
 
 func InitStream(ctx *dgctx.DgContext, subject *NatsSubject) error {
 	subjectId := subject.GetId()
@@ -83,5 +87,6 @@ func buildStreamConfig(subject *NatsSubject) *nats.StreamConfig {
 		Name:     subject.Category,
 		Subjects: []string{subject.Name},
 		Storage:  nats.FileStorage,
+		MaxAge:   utils.IfReturn(subject.MaxAge > 0, subject.MaxAge, defaultMaxAge),
 	}
 }

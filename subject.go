@@ -2,6 +2,7 @@ package dgnats
 
 import (
 	"regexp"
+	"time"
 
 	"github.com/darwinOrg/go-common/utils"
 )
@@ -14,9 +15,10 @@ const (
 var illegalRegex = regexp.MustCompile(illegalRegexStr)
 
 type NatsSubject struct {
-	Category string `json:"category" binding:"required" remark:"流/topic"`
-	Name     string `json:"name" binding:"required" remark:"tag"`
-	Group    string `json:"group" remark:"队列"`
+	Category string        `json:"category" binding:"required" remark:"流/topic"`
+	Name     string        `json:"name" binding:"required" remark:"tag"`
+	Group    string        `json:"group" remark:"队列"`
+	MaxAge   time.Duration `json:"maxAge" remark:"最大时长"`
 }
 
 func (s *NatsSubject) GetId() string {
