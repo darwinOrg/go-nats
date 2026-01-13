@@ -44,37 +44,35 @@ func TestPubSub(t *testing.T) {
 	}
 	defer dgnats.Close()
 
-	_, _ = dgnats.SubscribeRawWithTag(ctx, testSubject, "tag1", func(ctx *dgctx.DgContext, data []byte) error {
+	_, _ = dgnats.SubscribeWithTag(ctx, testSubject, "tag1", func(ctx *dgctx.DgContext, data []byte) error {
 		jsonBytes, _ := json.Marshal(string(data))
 		dglogger.Infof(ctx, "handle message raw1: %s", string(jsonBytes))
 		return nil
 	})
 
-	_, _ = dgnats.SubscribeRawWithTag(ctx, testSubject, "tag2", func(ctx *dgctx.DgContext, data []byte) error {
+	_, _ = dgnats.SubscribeWithTag(ctx, testSubject, "tag2", func(ctx *dgctx.DgContext, data []byte) error {
 		jsonBytes, _ := json.Marshal(string(data))
 		dglogger.Infof(ctx, "handle message raw2: %s", string(jsonBytes))
 		return nil
 	})
 
-	_, _ = dgnats.SubscribeJson(ctx, testSubject, func(ctx *dgctx.DgContext, s *TestStruct) error {
-		jsonBytes, _ := json.Marshal(s)
-		dglogger.Infof(ctx, "handle message json: %s", string(jsonBytes))
+	_, _ = dgnats.Subscribe(ctx, testSubject, func(ctx *dgctx.DgContext, bytes []byte) error {
+		dglogger.Infof(ctx, "handle message json: %s", string(bytes))
 		return nil
 	})
 
-	_, _ = dgnats.SubscribeJsonDelay(ctx, testDelaySubject, time.Second, func(ctx *dgctx.DgContext, s *TestStruct) error {
-		jsonBytes, _ := json.Marshal(s)
-		dglogger.Infof(ctx, "handle delay message: %s", string(jsonBytes))
+	_, _ = dgnats.SubscribeDelay(ctx, testDelaySubject, time.Second, func(ctx *dgctx.DgContext, bytes []byte) error {
+		dglogger.Infof(ctx, "handle delay message: %s", string(bytes))
 		return nil
 	})
 
-	err = dgnats.PublishJson(ctx, testSubject, &TestStruct{Content: "123"})
+	err = dgnats.Publish(ctx, testSubject, &TestStruct{Content: "123"})
 	if err != nil {
 		dglogger.Errorf(ctx, "publish message error: %v", err)
 		return
 	}
 
-	err = dgnats.PublishJsonDelay(ctx, testDelaySubject, &TestStruct{Content: "456"}, time.Second*3)
+	err = dgnats.PublishDelay(ctx, testDelaySubject, &TestStruct{Content: "456"}, time.Second*3)
 	if err != nil {
 		dglogger.Errorf(ctx, "publish delay message error: %v", err)
 		return

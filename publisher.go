@@ -1,7 +1,6 @@
 package dgnats
 
 import (
-	"encoding/json"
 	"strconv"
 	"time"
 
@@ -11,22 +10,22 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-func PublishJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, obj *T) error {
-	jsonBytes, err := json.Marshal(obj)
+func Publish(ctx *dgctx.DgContext, subject *NatsSubject, obj any) error {
+	bytes, err := ToBytes(ctx, obj)
 	if err != nil {
 		return err
 	}
-	dglogger.Infof(ctx, "publish subject[%s] json message: %s", subject.Name, string(jsonBytes))
+	dglogger.Infof(ctx, "publish subject[%s] json message: %s", subject.Name, string(bytes))
 
-	return PublishRaw(ctx, subject, jsonBytes)
+	return PublishRaw(ctx, subject, bytes)
 }
 
-func PublishJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, obj *T, duration time.Duration) error {
-	jsonBytes, err := json.Marshal(obj)
+func PublishDelay(ctx *dgctx.DgContext, subject *NatsSubject, obj any, duration time.Duration) error {
+	bytes, err := ToBytes(ctx, obj)
 	if err != nil {
 		return err
 	}
-	dglogger.Infof(ctx, "publish subject[%s] json delay message: %s", subject.Name, string(jsonBytes))
+	dglogger.Infof(ctx, "publish subject[%s] json delay message: %s", subject.Name, string(bytes))
 
 	header := map[string][]string{
 		constants.TraceId: {ctx.TraceId},
@@ -38,7 +37,7 @@ func PublishJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, obj *T,
 		Subject: subject.Name,
 		Reply:   subject.Name,
 		Header:  header,
-		Data:    jsonBytes,
+		Data:    bytes,
 	}
 
 	return publishMsg(ctx, subject, msg)
