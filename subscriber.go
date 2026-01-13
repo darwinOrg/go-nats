@@ -6,6 +6,7 @@ import (
 
 	"github.com/darwinOrg/go-common/constants"
 	dgctx "github.com/darwinOrg/go-common/context"
+	"github.com/darwinOrg/go-common/utils"
 	dglogger "github.com/darwinOrg/go-logger"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nuid"
@@ -172,6 +173,39 @@ func subscribeDelay(msg *nats.Msg, subject *NatsSubject, sleepDuration time.Dura
 	dglogger.Infof(ctx, "[%s] receive delay json message: %s", subject.Name, data)
 
 	workAndAck(ctx, msg, workFn)
+}
+
+func SubscribeJson[T any](ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.DgContext, *T) error) (*nats.Subscription, error) {
+	return Subscribe(ctx, subject, func(ctx *dgctx.DgContext, data []byte) error {
+		t, err := utils.ConvertJsonBytesToBean[T](data)
+		if err != nil {
+			return err
+		}
+
+		return workFn(ctx, t)
+	})
+}
+
+func SubscribeJsonWithTag[T any](ctx *dgctx.DgContext, subject *NatsSubject, tag string, workFn func(*dgctx.DgContext, *T) error) (*nats.Subscription, error) {
+	return SubscribeWithTag(ctx, subject, tag, func(ctx *dgctx.DgContext, data []byte) error {
+		t, err := utils.ConvertJsonBytesToBean[T](data)
+		if err != nil {
+			return err
+		}
+
+		return workFn(ctx, t)
+	})
+}
+
+func SubscribeJsonDelay[T any](ctx *dgctx.DgContext, subject *NatsSubject, sleepDuration time.Duration, workFn func(*dgctx.DgContext, *T) error) (*nats.Subscription, error) {
+	return SubscribeDelay(ctx, subject, sleepDuration, func(ctx *dgctx.DgContext, data []byte) error {
+		t, err := utils.ConvertJsonBytesToBean[T](data)
+		if err != nil {
+			return err
+		}
+
+		return workFn(ctx, t)
+	})
 }
 
 func Unsubscribe(ctx *dgctx.DgContext, subject *NatsSubject, tag string) error {
