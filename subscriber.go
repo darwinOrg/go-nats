@@ -14,7 +14,7 @@ import (
 
 var (
 	SubWorkErrorRetryWait = time.Second * 5
-	MaxAckPendingCount    = 1000
+	MaxAckPendingCount    = 100
 
 	DefaultSubOpts = []nats.SubOpt{
 		nats.AckExplicit(),
