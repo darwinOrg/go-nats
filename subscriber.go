@@ -13,14 +13,13 @@ import (
 )
 
 var (
-	SubWorkErrorRetryWait = time.Second * 5
-	MaxAckPendingCount    = 100
+	SubWorkErrorRetryWait     = time.Second * 5
+	DefaultMaxAckPendingCount = 100
 
 	DefaultSubOpts = []nats.SubOpt{
 		nats.AckExplicit(),
 		nats.ManualAck(),
 		nats.DeliverLast(),
-		nats.MaxAckPending(MaxAckPendingCount),
 	}
 )
 
@@ -237,6 +236,8 @@ func buildSubOpts(subject *NatsSubject, tag string) []nats.SubOpt {
 	var subOpts []nats.SubOpt
 	subOpts = append(subOpts, DefaultSubOpts...)
 	subOpts = append(subOpts, nats.Durable(subject.GetDurable(tag)), nats.BindStream(subject.Category))
+	maxAckPendingCount := utils.IfReturn(subject.MaxAckPendingCount > 0, subject.MaxAckPendingCount, DefaultMaxAckPendingCount)
+	subOpts = append(subOpts, nats.MaxAckPending(maxAckPendingCount))
 	return subOpts
 }
 

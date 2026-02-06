@@ -15,10 +15,11 @@ const (
 var illegalRegex = regexp.MustCompile(illegalRegexStr)
 
 type NatsSubject struct {
-	Category string        `json:"category" binding:"required" remark:"流/topic"`
-	Name     string        `json:"name" binding:"required" remark:"tag"`
-	Group    string        `json:"group" remark:"队列"`
-	MaxAge   time.Duration `json:"maxAge" remark:"最大时长"`
+	Category           string        `json:"category" binding:"required" remark:"流/topic"`
+	Name               string        `json:"name" binding:"required" remark:"tag"`
+	Group              string        `json:"group" remark:"队列"`
+	MaxAge             time.Duration `json:"maxAge" remark:"最大时长"`
+	MaxAckPendingCount int           `json:"maxAckPendingCount" remark:"未被确认的最多未发送消息数"`
 }
 
 func (s *NatsSubject) GetId() string {
