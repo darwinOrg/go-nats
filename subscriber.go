@@ -38,15 +38,17 @@ func Subscribe(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.Dg
 		return nil, err
 	}
 
+	subOpts := buildSubOpts(js, subject, "")
+
 	var sub *nats.Subscription
 	if subject.Group != "" {
 		sub, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribe(msg, workFn)
-		}, buildSubOpts(subject, "")...)
+		}, subOpts...)
 	} else {
 		sub, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribe(msg, workFn)
-		}, buildSubOpts(subject, "")...)
+		}, subOpts...)
 	}
 	if err != nil {
 		dglogger.Errorf(ctx, "subscribe subject[%s] error: %v", subject.Name, err)
@@ -81,15 +83,17 @@ func SubscribeWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, wo
 		return nil, err
 	}
 
+	subOpts := buildSubOpts(js, subject, tag)
+
 	var sub *nats.Subscription
 	if subject.Group != "" {
 		sub, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeWithTag(msg, tag, workFn)
-		}, buildSubOpts(subject, tag)...)
+		}, subOpts...)
 	} else {
 		sub, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeWithTag(msg, tag, workFn)
-		}, buildSubOpts(subject, tag)...)
+		}, subOpts...)
 	}
 
 	if err != nil {
@@ -126,15 +130,17 @@ func SubscribeDelay(ctx *dgctx.DgContext, subject *NatsSubject, sleepDuration ti
 		return nil, err
 	}
 
+	subOpts := buildSubOpts(js, subject, "")
+
 	var sub *nats.Subscription
 	if subject.Group != "" {
 		sub, err = js.QueueSubscribe(subject.Name, subject.Group, func(msg *nats.Msg) {
 			subscribeDelay(msg, subject, sleepDuration, workFn)
-		}, buildSubOpts(subject, "")...)
+		}, subOpts...)
 	} else {
 		sub, err = js.Subscribe(subject.Name, func(msg *nats.Msg) {
 			subscribeDelay(msg, subject, sleepDuration, workFn)
-		}, buildSubOpts(subject, "")...)
+		}, subOpts...)
 	}
 
 	if err != nil {
@@ -232,7 +238,14 @@ func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
 	return &dgctx.DgContext{TraceId: traceId}
 }
 
-func buildSubOpts(subject *NatsSubject, tag string) []nats.SubOpt {
+func buildSubOpts(js nats.JetStreamContext, subject *NatsSubject, tag string) []nats.SubOpt {
+	consumerInfo, _ := js.ConsumerInfo(subject.Category, subject.Name)
+	if consumerInfo != nil {
+		return []nats.SubOpt{
+			nats.Bind(subject.Category, subject.GetDurable(tag)),
+		}
+	}
+
 	var subOpts []nats.SubOpt
 	subOpts = append(subOpts, DefaultSubOpts...)
 	subOpts = append(subOpts, nats.Durable(subject.GetDurable(tag)), nats.BindStream(subject.Category))
