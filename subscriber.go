@@ -38,7 +38,7 @@ func Subscribe(ctx *dgctx.DgContext, subject *NatsSubject, workFn func(*dgctx.Dg
 		return nil, err
 	}
 
-	subOpts := buildSubOpts(js, subject, "")
+	subOpts := buildSubOpts(subject, "")
 
 	var sub *nats.Subscription
 	if subject.Group != "" {
@@ -83,7 +83,7 @@ func SubscribeWithTag(ctx *dgctx.DgContext, subject *NatsSubject, tag string, wo
 		return nil, err
 	}
 
-	subOpts := buildSubOpts(js, subject, tag)
+	subOpts := buildSubOpts(subject, tag)
 
 	var sub *nats.Subscription
 	if subject.Group != "" {
@@ -130,7 +130,7 @@ func SubscribeDelay(ctx *dgctx.DgContext, subject *NatsSubject, sleepDuration ti
 		return nil, err
 	}
 
-	subOpts := buildSubOpts(js, subject, "")
+	subOpts := buildSubOpts(subject, "")
 
 	var sub *nats.Subscription
 	if subject.Group != "" {
@@ -238,19 +238,13 @@ func buildDgContextFromMsg(msg *nats.Msg) *dgctx.DgContext {
 	return &dgctx.DgContext{TraceId: traceId}
 }
 
-func buildSubOpts(js nats.JetStreamContext, subject *NatsSubject, tag string) []nats.SubOpt {
-	consumerInfo, _ := js.ConsumerInfo(subject.Category, subject.Name)
-	if consumerInfo != nil {
-		return []nats.SubOpt{
-			nats.Bind(subject.Category, subject.GetDurable(tag)),
-		}
-	}
-
+func buildSubOpts(subject *NatsSubject, tag string) []nats.SubOpt {
 	var subOpts []nats.SubOpt
 	subOpts = append(subOpts, DefaultSubOpts...)
 	subOpts = append(subOpts, nats.Durable(subject.GetDurable(tag)), nats.BindStream(subject.Category))
-	maxAckPendingCount := utils.IfReturn(subject.MaxAckPendingCount > 0, subject.MaxAckPendingCount, DefaultMaxAckPendingCount)
-	subOpts = append(subOpts, nats.MaxAckPending(maxAckPendingCount))
+	if subject.MaxAckPendingCount > 0 {
+		subOpts = append(subOpts, nats.MaxAckPending(subject.MaxAckPendingCount))
+	}
 	return subOpts
 }
 
